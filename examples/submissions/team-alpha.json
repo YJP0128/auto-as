@@ -1,0 +1,5 @@
+{
+  "demo_url": "https://example.com",
+  "repo_url": "https://github.com/octocat/Hello-World",
+  "scenario": "페이지를 확인하고 시작 버튼을 클릭한다"
+}

@@ -1,0 +1,5 @@
+{
+  "demo_url": "https://example.com",
+  "repo_url": "https://github.com/github/gitignore",
+  "scenario": "이메일 입력란에 test@example.com을 입력하고 제출 버튼을 클릭한다"
+}

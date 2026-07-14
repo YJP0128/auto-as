@@ -1,0 +1,6 @@
+{
+  "demo_url": "https://present-to-u.vercel.app/",
+  "repo_url": "https://github.com/MossesTree/PresentToU.git",
+  "scenario": "받는 사람 이름 입력란에 민수 입력하고 대화 파일을 업로드하고 취향 저격 선물 추천받기 버튼을 클릭한다",
+  "test_files": ["fixtures/sample-conversation.txt"]
+}
