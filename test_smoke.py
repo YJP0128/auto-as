@@ -86,7 +86,10 @@ def test_leaderboard_review_flag():
 
 def test_panel():
     result = run_panel({"submission": {"scenario": "x"}, "static_analysis": {"categories": {}}, "git_analysis": {}})
-    assert set(result["judges"]) == {"problem_wow", "agent_design", "completeness", "operations", "collaboration"}
+    assert set(result["judges"]) == {"problem_wow", "agent_design", "completeness", "ux", "operations", "collaboration"}
+    assert result["judges"]["ux"]["persona"] == "다니엘 킴"
+    assert "user" in result["judges"]["ux"]["style"]
+    assert any("UX check" in event["text"] for event in result["discussion"])
     assert all(judge["rounds"] == [judge["score"], judge["score"]] for judge in result["judges"].values())
     assert result["discussion"][-1]["speaker"] == "Coordinator"
 

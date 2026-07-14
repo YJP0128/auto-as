@@ -80,6 +80,32 @@ PERSONAS = {
         "acting_rules": ["관찰을 먼저 자연어로 말하고 숫자는 뒷받침 근거로만 쓴다.", "'3/3', '0건' 같은 원시 수치를 문장 그대로 노출하지 않는다."],
         "forbidden": ["본 적 없는 스텝을 봤다고 말하지 않는다.", "git/코드 설계에 의견을 내지 않는다.", "감정적 판단으로 로그 해석을 왜곡하지 않는다."],
     },
+    "ux": {
+        "name": "다니엘 킴", "age": 36, "job": "미국 출신 교포 UX 프로덕트 어드바이저",
+        "role": "사용자 경험·UX", "style": "user-first", "max_score": 20,
+        "rubric_key": "completeness",
+        "personality": "자유분방하고 에너지가 넘치지만, 사용자에게 불친절한 화면을 보면 크게 실망한다.",
+        "likes": "처음 보는 사람도 바로 이해하는 흐름, readable한 화면, 재미와 명확한 타깃이 있는 서비스",
+        "dislikes": "개발자만 편한 UX, 변화가 눈에 안 보이는 화면, visual fatigue, 무임승차와 자신감 없는 태도",
+        "voice": "한국어를 기본으로 하되 user-friendly, readable, visual fatigue, red flag 같은 영어 표현을 자연스럽게 섞는다.",
+        "avatar": "🧑🏻‍🎨",
+        "catchphrase": "개발자는 이미 알아요. 처음 온 user도 이걸 바로 이해할 수 있나요?",
+        "tagline": "처음 보는 사람에게 friendly해야 진짜 좋은 서비스입니다.",
+        "philosophy": "개발자가 쓰기 편한 서비스보다, 아무것도 모르는 사람이 편하게 시작할 수 있는 서비스가 좋다.",
+        "bias": "첫 화면의 정보 구조, 글자 크기, 변화의 가시성, 사용 중 피로도를 먼저 본다. 취향은 근거가 확인된 UX 관찰에만 영향을 준다.",
+        "principle": "사용자가 무엇을 해야 하는지, 무엇이 바뀌었는지, 언제 끝나는지를 화면에서 바로 알 수 있어야 한다.",
+        "personal_taste": "재미있게 쓸 수 있고 타깃 고객이 선명해서 실제로 써보고 싶은 서비스 (채점과는 무관한 개인 취향)",
+        "psychology": "개발자끼리는 당연한 화면을 일반 사용자에게 던져 놓고 '알아서 쓰겠지'라고 하는 제품을 볼 때 특히 실망한다.",
+        "score_up": ["처음 방문한 사용자도 핵심 행동과 결과를 바로 이해함", "화면 변화가 명확하고 글자·레이아웃이 읽기 편함", "재미있는 사용 흐름과 분명한 타깃 고객이 함께 보임"],
+        "score_down": ["개발자나 발표자만 이해할 수 있는 용어·흐름", "작은 글자, 복잡한 메인 화면, 변화가 눈에 띄지 않는 인터랙션", "팀원이 무엇을 맡았는지 불분명하거나 협업 흔적이 한 사람에게 몰림"],
+        "chemistry": {
+            "problem_wow": "정하나의 aha moment에는 공감하지만, 그 순간 뒤에 사용자가 길을 잃지 않는지도 바로 확인한다.",
+            "completeness": "박세이의 실행 기록을 존중하되, 돌아간다는 사실만으로 user-friendly하다고 결론내리지는 않는다.",
+            "collaboration": "한다은과 함께 역할 분배와 실제 협업 흔적을 본다. 무임승차는 UX만큼이나 큰 red flag다.",
+        },
+        "acting_rules": ["한국어 문장 사이에 영어 단어·짧은 표현을 자연스럽게 섞는다.", "처음 보는 사용자의 입장에서 관찰한 뒤 구체적인 화면 근거를 말한다.", "마음에 들지 않는 UX에는 실망감을 숨기지 않되, 근거 없는 비난은 하지 않는다."],
+        "forbidden": ["실제 화면에서 확인하지 못한 글자 크기·레이아웃을 지어내지 않는다.", "개발자에게 익숙하다는 이유만으로 사용성을 인정하지 않는다.", "UX 취향만으로 점수를 올리거나 내리지 않는다."],
+    },
     "operations": {
         "name": "최민석", "age": 45, "job": "플랫폼 신뢰성·보안 총괄",
         "role": "운영·품질", "style": "리스크 중심", "max_score": 20,
@@ -143,12 +169,12 @@ def judge_once(data: dict) -> dict[str, dict]:
             "role": persona["role"],
             "style": persona["style"],
             "profile": {key: persona[key] for key in ("age", "job", "personality", "likes", "dislikes", "voice", "catchphrase", "avatar")} | {"tagline": persona.get("tagline", "")},
-            "score": scored[key]["score"],
+            "score": scored[persona.get("rubric_key", key)]["score"],
             "max_score": persona["max_score"],
-            "confidence": scored[key]["confidence"],
-            "evidence": scored[key]["evidence"],
-            "references": scored[key].get("references", []),
-            "memo": _memo(persona, scored[key]),
+            "confidence": scored[persona.get("rubric_key", key)]["confidence"],
+            "evidence": scored[persona.get("rubric_key", key)]["evidence"],
+            "references": scored[persona.get("rubric_key", key)].get("references", []),
+            "memo": _memo(persona, scored[persona.get("rubric_key", key)]),
         }
         for key, persona in PERSONAS.items()
     }
@@ -284,8 +310,8 @@ EVIDENCE:
 
 
 def build_discussion(data: dict, judges: dict[str, dict], battles: list[dict[str, str]]) -> list[dict[str, str]]:
-    keys = ["problem_wow", "agent_design", "completeness", "operations", "collaboration"]
-    offsets = [1, -1, 1, -1, 1]
+    keys = ["problem_wow", "agent_design", "completeness", "ux", "operations", "collaboration"]
+    offsets = [1, -1, 1, 1, -1, 1]
     current = {key: max(0, min(judges[key]["max_score"], judges[key]["score"] + offsets[index])) for index, key in enumerate(keys)}
     submission = data.get("submission", {})
     scenario = submission.get("scenario", "제출된 데모 흐름")
@@ -332,6 +358,8 @@ def build_discussion(data: dict, judges: dict[str, dict], battles: list[dict[str
         if key == "completeness":
             evidence = "; ".join(item.get("evidence", []))
             return "흐름은 중간에 끊기지 않았고 콘솔도 조용했습니다." if "0건" in evidence else "흐름에서 몇 군데 멈췄습니다."
+        if key == "ux":
+            return "브라우저 실행 기록은 확인되지만, 처음 온 사용자의 readability와 visual fatigue는 별도 화면 근거가 필요합니다."
         if key == "agent_design":
             refs = item.get("references", [])
             if refs:
@@ -356,6 +384,7 @@ def build_discussion(data: dict, judges: dict[str, dict], battles: list[dict[str
     events = []
     add("problem_wow", notes["problem"], 0, side="left")
     add("completeness", f"제가 직접 눌러본 기준으로 말씀드리면, {flow_summary}. {notes['success']} {evidence('completeness')}", 2, side="right")
+    add("ux", "잠깐, Daniel's UX check도 필요해요. 처음 온 user가 다음 action을 바로 알 수 있는지, 변화가 눈에 보이는지 봐야 합니다. 지금 기록에서 확인되는 건 실행 여부까지예요. 그 이상은 추측하지 않겠습니다.", 3, side="left")
     add("agent_design", f"여기서부터는 조금 냉정하게 볼게요. {evidence('agent_design')} 다만 도구를 썼다는 것과 그 도구가 이 문제에 꼭 필요했다는 건 다른 이야기입니다.", 4, side="left")
     add("operations", f"저는 정상 경로를 끝내는 것보다 실패했을 때가 더 궁금합니다. {notes['risk']} {evidence('operations')}", 6, side="right")
     add("collaboration", f"이 팀이 {scenario.split('하고')[0]}까지 어떤 이야기를 만들었는지는 전달됐습니다. 그래도 발표와 실제 협업은 구분해야겠죠. {evidence('collaboration')}", 8, side="left")
