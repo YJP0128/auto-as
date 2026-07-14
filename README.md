@@ -41,3 +41,26 @@ Playwright 브라우저가 설치되지 않은 환경에서는 `browser.availabl
 시나리오 planner는 계속 로컬 규칙으로 동작합니다. OpenAI는 평가 점수와 패널 대화 생성에만 사용합니다.
 
 현재 점수는 `local_provisional` 모드의 임시 규칙 기반 점수입니다. 각 항목의 점수와 근거는 `score.items`에 저장됩니다.
+
+## 배포 (리더보드를 웹에서 바로 보기)
+
+채점 파이프라인(저장소 clone, Playwright, OpenAI 호출)은 로컬/서버에서만 실행합니다.
+`output/`에 생성된 정적 HTML(리더보드 + 팀별 리포트)만 Vercel에 정적 사이트로 올려서
+바로 웹 브라우저로 확인할 수 있습니다.
+
+```bash
+# 1) 채점을 다시 돌려 output/을 갱신
+python -m auto_as.batch examples/submissions -o output
+
+# 2) 루트(/) 접속 시 /leaderboard.html로 리다이렉트되도록 vercel.json 복사
+cp deploy/vercel.json output/vercel.json
+
+# 3) 프로덕션 재배포
+npx vercel deploy ./output --prod --yes
+```
+
+현재 배포 주소: https://output-alpha-wheat.vercel.app
+
+GitHub 저장소: https://github.com/YJP0128/auto-as (소스 코드만 포함, `output/`은
+`.gitignore`로 제외되어 있고 Vercel에는 CLI로 직접 배포합니다 - GitHub push 자체가
+자동 배포를 트리거하지는 않습니다).

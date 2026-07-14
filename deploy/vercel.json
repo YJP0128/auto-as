@@ -1,0 +1,3 @@
+{
+  "redirects": [{ "source": "/", "destination": "/leaderboard.html", "permanent": false }]
+}
