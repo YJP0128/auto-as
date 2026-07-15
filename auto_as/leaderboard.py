@@ -155,7 +155,7 @@ h1{margin:0;font-size:clamp(30px,5vw,52px);letter-spacing:-.06em}
 .section-heading{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:18px}
 .section-heading h2{margin:0;font-size:24px;letter-spacing:-.05em}
 .section-heading span{color:#aeb9d5;font-size:13px}
-.panel-roster{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.panel-roster{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
 .persona-card{min-width:0;padding:14px;border:1px solid #ffffff20;border-radius:15px;background:#ffffff0d}
 .persona-avatar{display:block;margin-bottom:8px;font-size:30px}
 .persona-card strong,.persona-card span,.persona-card p,.persona-card small{display:block}
@@ -164,7 +164,7 @@ h1{margin:0;font-size:clamp(30px,5vw,52px);letter-spacing:-.06em}
 .persona-card em{display:block;margin-top:6px;color:#c9d0ea;font-size:11px;font-style:normal}
 .persona-card p{min-height:48px;margin:10px 0;color:#d8def0;font-size:12px;line-height:1.45}
 .persona-card small{color:#9eafff;font-size:11px;line-height:1.4}
-@media(max-width:960px){.panel-roster{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:1100px){.panel-roster{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){
   .shell{padding:28px 14px 50px}
   .hero{display:block}
