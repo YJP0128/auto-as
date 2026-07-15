@@ -320,7 +320,7 @@
         "dependencies": [
           "4"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -328,7 +328,7 @@
             "description": "Confirm the five fictional judge personas and establish a consistent visual specification for their leaderboard profile images.",
             "dependencies": [],
             "details": "Review persona definitions, select non-real-person archetypal visual traits, and document target format, dimensions, aspect ratio, naming convention, and licensing/originality requirements.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify the specification lists exactly five known personas and prohibits real-person likenesses.",
             "parentId": "undefined"
           },
@@ -340,7 +340,7 @@
               1
             ],
             "details": "Create or acquire one distinct non-infringing image per persona, ensuring no recognizable real-person likeness is used and retaining attribution or license records when applicable.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Manually review all five images for persona alignment, licensing approval, and absence of real-person likenesses.",
             "parentId": "undefined"
           },
@@ -352,7 +352,7 @@
               2
             ],
             "details": "Crop and export each approved asset to the selected card-friendly aspect ratio, optimize file size, and add files under stable version-controlled asset paths using descriptive filenames.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Check that exactly five asset files resolve from their committed paths and meet the documented dimensions and format requirements.",
             "parentId": "undefined"
           },
@@ -364,7 +364,7 @@
               3
             ],
             "details": "Update persona documentation or add an adjacent manifest containing each persona identifier, stable asset path, descriptive accessible alt text, and any required license metadata.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Validate that the manifest has five unique known-persona mappings, resolvable paths, non-empty alt text, and no duplicate filenames.",
             "parentId": "undefined"
           },
@@ -377,7 +377,7 @@
               4
             ],
             "details": "Update leaderboard card rendering or asset configuration to consume the documented paths and alt text, with a neutral placeholder or fallback styling when an image is unavailable or fails to load.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Render an HTML fixture to assert all five images expose alt text and verify a missing or failed image activates the neutral fallback behavior.",
             "parentId": "undefined"
           }
