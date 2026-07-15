@@ -135,6 +135,50 @@ def test_operational_quality_tiers():
     assert op({"monitoring": True, "guardrails": True})["score"] == 0
 
 
+def test_persona_documentation():
+    document = (Path(__file__).parent / "docs" / "judge-personas.md").read_text(encoding="utf-8")
+    expected_mapping = {
+        "vc_investor": "problem_wow",
+        "open_source_maintainer": "ai_implementation",
+        "staff_engineer": "completeness",
+        "evaluation_reviewer": "operational_quality",
+        "it_creator": "presentation_collaboration",
+    }
+    assert set(expected_mapping.values()) == set(RUBRIC)
+    assert document.count("## Persona:") == 5
+    assert "실존 인물의 실제 외모·말투·인격·생애·대표 표현을 재현" in document
+    assert "근거 부족" in document
+
+    blocks = {}
+    for section in document.split("## Persona:")[1:]:
+        heading, body = section.split("\n", 1)
+        blocks[heading.split("—", 1)[0].strip()] = body
+    assert set(blocks) == set(expected_mapping)
+
+    required_labels = (
+        "역할 및 전문 분야",
+        "주 담당 기준",
+        "선호 근거",
+        "비판 성향",
+        "허용 말투",
+        "금지 채점",
+        "대표 합성 발언",
+    )
+    for persona_id, criterion in expected_mapping.items():
+        block = blocks[persona_id]
+        assert all(label in block for label in required_labels)
+        assert f"**주 담당 기준:** `{criterion}`" in block
+        assert document.count(f"**주 담당 기준:** `{criterion}`") == 1
+        utterances = block.split("- **대표 합성 발언:**", 1)[1].split("- **프로필 이미지:**", 1)[0]
+        assert utterances.count("  - “[") == 2
+
+    operations = blocks["evaluation_reviewer"]
+    for signal, weight in (("golden_dataset", 8), ("eval_metric", 5), ("eval_signal", 2)):
+        assert f"`{signal}`" in operations
+        assert f"{weight}점" in operations
+    assert "`monitoring`·`guardrails`만으로 운영품질 점수 부여" in operations
+
+
 def test_report_rendering():
     with tempfile.TemporaryDirectory() as directory:
         output = Path(directory) / "report.html"
