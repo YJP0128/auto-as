@@ -515,6 +515,31 @@ def test_coordinator_final_decisions():
         raise AssertionError("out-of-range coordinator score must be rejected")
 
 
+def test_dialogue_and_sample():
+    from auto_as.panel import CRITERION_REVIEWERS, run_local_panel
+
+    root = Path(__file__).parent
+    fixture = json.loads((root / "examples" / "submissions" / "fixtures" / "sample-evidence.json").read_text(encoding="utf-8"))
+    panel = run_local_panel(fixture)
+    assert len(panel["first_round"]) == 10
+    assert len(panel["reconciliation"]) == 5
+    assert len(panel["final_decisions"]) == 5
+    for draft in panel["first_round"]:
+        assert CRITERION_REVIEWERS[draft["criterion"]][draft["role"]] == draft["persona_id"]
+    for decision in panel["final_decisions"]:
+        assert 0 <= decision["final_score"] <= decision["max_score"]
+        assert "references" in decision and "evidence_sufficient" in decision
+
+    dialogue = (root / "docs" / "dialogue-quality.md").read_text(encoding="utf-8")
+    for section in ("담당 구조 (2:2)", "1차 채점", "의견 조정", "코디네이터 최종 결정"):
+        assert section in dialogue
+
+    sample = (root / "docs" / "sample-panel-run.md").read_text(encoding="utf-8")
+    for stage in ("1단계 — 1차 채점", "2단계 — 의견 조정", "3단계 — 코디네이터", "30초 타임라인"):
+        assert stage in sample
+    assert "illustrative" in sample
+
+
 def test_test_file_path_is_contained():
     with tempfile.TemporaryDirectory() as directory:
         input_path = Path(directory) / "submission.json"
