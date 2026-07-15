@@ -55,7 +55,11 @@ SIGNALS = {
     "tools": ("tool_call", "tools", "function_call", "@tool"),
     "rag": ("retrieval", "vectorstore", "vector_store", "embedding", "chroma", "pinecone"),
     "multi_agent": ("multi-agent", "multi_agent", "subagent", "handoff"),
-    "evaluation": ("eval", "evaluation", "benchmark", "golden set"),
+    # 운영품질(operational_quality) — 골든셋/성능평가 3단계 신호 (강→중→약)
+    "golden_dataset": ("golden set", "golden dataset", "golden_dataset", "ground truth", "ground_truth", "gold standard", "gold_standard", "labeled dataset", "eval set", "eval_set", "test set"),
+    "eval_metric": ("accuracy", "precision", "recall", "f1", "f1_score", "bleu", "rouge", "perplexity", "benchmark", "evaluation"),
+    "eval_signal": ("eval", "evaluate", "quality check", "regression test"),
+    # 아래 두 신호는 정적분석 표시용 — 운영품질 점수에는 반영하지 않는다 (신 루브릭 정의와 무관)
     "monitoring": ("telemetry", "tracing", "prometheus", "opentelemetry", "monitoring"),
     "guardrails": ("guardrail", "moderation", "sanitize", "validation", "content_filter"),
 }
