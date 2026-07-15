@@ -142,6 +142,37 @@ def test_report_rendering():
         assert "&lt;unsafe&gt;" in report
 
 
+def test_report_t13_complete_fixture_has_traceable_sections():
+    data = {"submission": {"scenario": "시작 버튼을 클릭한다"}, "static_analysis": {"categories": {}, "matches": {}}, "git_analysis": {}, "browser": {"steps": []}}
+    data["score"] = score_evidence(data)
+    data["panel"] = run_local_panel(data)
+    with tempfile.TemporaryDirectory() as directory:
+        output = Path(directory) / "report.html"
+        render_report(data, output)
+        rendered = output.read_text(encoding="utf-8")
+    assert rendered.count("class='criterion-card") == 5
+    assert "criteria-heading" in rendered and "summary-heading" in rendered
+    assert "심사 조정 리플레이" in rendered and "coordinator" in rendered
+    for label, maximum in (("문제·Wow", 20), ("AI 기능 구현", 20), ("동작·완성도", 25), ("운영·품질", 15), ("발표·협업", 20)):
+        assert label in rendered
+        assert f" / {maximum}" in rendered
+    assert "href='#evidence-submission-scenario'" in rendered
+    assert "id='evidence-submission-scenario'" in rendered
+
+
+def test_report_t13_discloses_insufficient_evidence():
+    data = {"submission": {}, "static_analysis": {"categories": {}, "matches": {}}, "git_analysis": {}, "browser": {}}
+    data["score"] = score_evidence(data)
+    data["panel"] = run_local_panel(data)
+    with tempfile.TemporaryDirectory() as directory:
+        output = Path(directory) / "report.html"
+        render_report(data, output)
+        rendered = output.read_text(encoding="utf-8")
+    assert "근거 부족" in rendered
+    assert "근거 공백" in rendered
+    assert "evidence-insufficient" in rendered
+
+
 def test_leaderboard_rendering():
     result = {"team": "alpha", "score": {"total": 10, "items": {"problem_wow": {"name": "문제·Wow", "score": 10, "max_score": 20, "confidence": "medium"}}}, "browser": {}}
     assert assign_badges([result]) == {"alpha": ["가장 대담한 도전상"]}
