@@ -557,7 +557,7 @@
           "6",
           "7"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -565,9 +565,10 @@
             "description": "Identify the current discussion flow, assignment model, rubric limits, and output contracts needed for independent first-round scoring.",
             "dependencies": [],
             "details": "Trace build_discussion and local_provisional call paths. Define or extend typed assessment structures with criterion, reviewer, score, rationale, evidence_ids, references, and insufficient_evidence. Add validation helpers that enforce reviewer-to-criterion ownership and canonical rubric score bounds.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit-test contract validation for required fields, assigned ownership, bounded scores, and the rule that evidence IDs are required unless insufficiency is explicitly true.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-07-15T06:38:51.299Z"
           },
           {
             "id": 2,
@@ -577,9 +578,10 @@
               1
             ],
             "details": "Refactor local_provisional to iterate assignments rather than asking each persona for broad opinions. Filter evidence to the assigned criterion, apply stable rule-board scoring against rubric maxima, generate reproducible rationale and references, and emit explicit insufficient-evidence status when no concrete evidence can support a draft.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Use fixed fixtures to verify repeated local runs are byte-for-byte stable, scores remain within each criterion maximum, and every draft includes evidence/references or explicit insufficiency.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-07-15T06:38:51.304Z"
           },
           {
             "id": 3,
@@ -589,9 +591,10 @@
               1
             ],
             "details": "Build prompt context from the configured persona, its assigned criterion, rubric maximum, and criterion-filtered evidence. Define a strict request/response schema for a single assessment, include evidence and reference requirements, prohibit opinions on unassigned criteria, and validate returned content through the shared assessment validator.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Snapshot or inspect generated prompts to confirm they expose only the reviewer’s assigned criterion and assert schema validation rejects prose-only, unassigned, out-of-range, or unsupported responses.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-07-15T06:38:51.311Z"
           },
           {
             "id": 4,
@@ -602,9 +605,10 @@
               3
             ],
             "details": "Replace any aggregate or cross-criterion provisional behavior with an assignment loop. Dispatch each assignment to the selected provider, preserve criterion and reviewer identifiers, validate each result before inclusion, and ensure default panel configuration yields ten independent assessments without leaking other criterion judgments.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Integration-test default assignments to assert exactly ten drafts, expected primary/secondary reviewer ownership for every criterion, no duplicate assignment pairs, and no reviewer opinions outside their assignment.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-07-15T06:38:51.317Z"
           },
           {
             "id": 5,
@@ -614,12 +618,14 @@
               4
             ],
             "details": "Add representative evidence-rich and evidence-poor fixtures covering all criteria. Verify references resolve to supplied evidence where applicable, insufficiency is disclosed rather than fabricated, malformed provider responses are rejected or surfaced predictably, and the emitted first-round output remains compatible with downstream reconciliation consumers.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Run end-to-end fixture tests for ten drafts, rubric-bounded scores, valid evidence/reference linkage or insufficiency, deterministic local behavior, and structured OpenAI contract enforcement.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-07-15T06:38:51.324Z"
           }
         ],
-        "owner": "P2-debate"
+        "owner": "P2-debate",
+        "updatedAt": "2026-07-15T06:38:51.324Z"
       },
       {
         "id": "9",
@@ -1247,9 +1253,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-07-15T06:27:49.791Z",
+      "lastModified": "2026-07-15T06:38:51.324Z",
       "taskCount": 16,
-      "completedCount": 6,
+      "completedCount": 8,
       "tags": [
         "master"
       ]
