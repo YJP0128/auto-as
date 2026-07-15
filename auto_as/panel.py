@@ -354,6 +354,52 @@ def first_round_assessments(data: dict) -> list[dict]:
     return drafts
 
 
+def reconcile_criteria(data: dict) -> list[dict]:
+    """의견 조정(stage 2): 기준마다 주담당·부담당 두 초안을 맞대어 조정한 5개 레코드.
+
+    로컬은 결정론이라 두 초안이 동점이므로 근거를 공유·합의한다(unresolved=False).
+    실제 점수 발산과 반박은 OpenAI 모드에서 build_reconciliation_prompt가 처리한다.
+    이 레코드의 proposed_score는 제안일 뿐이며, 최종 확정은 task 10(코디네이터)가 한다.
+    """
+    drafts: dict[str, dict[str, dict]] = {}
+    for draft in first_round_assessments(data):
+        drafts.setdefault(draft["criterion"], {})[draft["role"]] = draft
+
+    records = []
+    for criterion in RUBRIC:
+        primary = drafts[criterion]["primary"]
+        secondary = drafts[criterion]["secondary"]
+        label = criterion_label(criterion)
+        agree = primary["score"] == secondary["score"]
+        insufficient = primary["insufficient_evidence"] and secondary["insufficient_evidence"]
+        p_name, s_name = primary["persona"], secondary["persona"]
+        if insufficient:
+            comparison = f"{p_name}과 {s_name} 모두 {label}에서 확인 가능한 근거를 찾지 못했습니다."
+            challenge = f"{s_name}: 근거가 없으면 점수를 추정하지 않겠습니다."
+            rebuttal = f"{p_name}: 동의합니다. 근거 부족을 그대로 남깁니다."
+        else:
+            comparison = f"{p_name}(주담당)과 {s_name}(부담당) 모두 {label}을(를) {primary['score']}점으로 봤습니다."
+            challenge = f"{s_name}: 같은 근거를 부담당 관점에서 다시 짚었습니다."
+            rebuttal = f"{p_name}: 관점 차이는 있지만 점수 근거는 같습니다."
+        records.append({
+            "criterion": criterion,
+            "primary_persona": primary["persona_id"],
+            "secondary_persona": secondary["persona_id"],
+            "primary_score": primary["score"],
+            "secondary_score": secondary["score"],
+            "max_score": primary["max_score"],
+            "comparison": comparison,
+            "challenge": challenge,
+            "rebuttal": rebuttal,
+            "accepted_evidence": list(primary["evidence"]),
+            "rejected_evidence": [],
+            "proposed_score": primary["score"],
+            "proposed_confidence": primary["confidence"],
+            "unresolved": not agree,
+        })
+    return records
+
+
 def run_local_panel(data: dict, repeats: int = 2) -> dict:
     rounds = [judge_once(data) for _ in range(max(1, repeats))]
     judges = {}
@@ -372,6 +418,7 @@ def run_local_panel(data: dict, repeats: int = 2) -> dict:
         "repeats": len(rounds),
         "judges": judges,
         "first_round": first_round_assessments(data),
+        "reconciliation": reconcile_criteria(data),
         "coordinator": dict(COORDINATOR),
         "battles": battles,
         "discussion": build_discussion(data, judges, battles),
@@ -543,6 +590,58 @@ SCORING_INVARIANTS:
 
 REVIEWERS:
 {json.dumps(reviewers, ensure_ascii=False)}
+
+EVIDENCE:
+{json.dumps(_openai_evidence(data), ensure_ascii=False)}
+
+OUTPUT_SCHEMA:
+{json.dumps(schema, ensure_ascii=False)}"""
+
+
+def build_reconciliation_prompt(data: dict) -> str:
+    """의견 조정(OpenAI) 프롬프트 — 기준마다 두 리뷰어의 초안을 맞대어 5개 조정을 요구한다.
+
+    점수 변경은 오직 해당 기준의 allowed_references 근거를 채택·재가중할 때만 허용하며,
+    권위·성격·말투·단순 주장으로는 바꿀 수 없다. 근거로 못 좁히면 unresolved=true.
+    """
+    catalog = _reference_catalog(data)
+    pairs = []
+    for criterion, roles in CRITERION_REVIEWERS.items():
+        pairs.append({
+            "criterion": criterion,
+            "max_score": int(RUBRIC[criterion]["max_score"]),
+            "primary": {"persona_id": roles["primary"], "display_name": PERSONAS[roles["primary"]]["display_name"]},
+            "secondary": {"persona_id": roles["secondary"], "display_name": PERSONAS[roles["secondary"]]["display_name"]},
+            "allowed_references": catalog.get(criterion, []),
+        })
+    schema = {
+        "reconciliations": [
+            {
+                "criterion": "the criterion",
+                "comparison": "short Korean comparison of the two drafts",
+                "challenge": "short Korean challenge citing evidence",
+                "rebuttal": "short Korean rebuttal citing evidence",
+                "accepted_evidence": ["exact allowed_references kept"],
+                "rejected_evidence": ["exact allowed_references dismissed"],
+                "proposed_score": "integer 0..max_score for that criterion",
+                "proposed_confidence": "high|medium|low",
+                "unresolved": "boolean",
+            }
+        ]
+    }
+    return f"""You are running stage 2 (per-criterion reconciliation) of a hackathon judging panel.
+Return valid JSON only. Produce exactly one reconciliation per PAIRS entry (5 total).
+
+Each criterion has two fictional reviewers (primary, secondary) who scored it independently. Compare their positions
+and let them challenge and rebut using evidence only. A score change is valid ONLY when it cites accepted or reweighted
+evidence from that criterion's allowed_references — never authority, personality, tone, or a bare assertion. Apply every
+rule in SCORING_INVARIANTS. If evidence cannot settle the gap, set unresolved=true. Keep proposed_score within 0..max_score.
+
+SCORING_INVARIANTS:
+{json.dumps(SCORING_INVARIANTS, ensure_ascii=False)}
+
+PAIRS:
+{json.dumps(pairs, ensure_ascii=False)}
 
 EVIDENCE:
 {json.dumps(_openai_evidence(data), ensure_ascii=False)}

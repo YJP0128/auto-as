@@ -460,6 +460,36 @@ def test_first_round_assessments():
     assert "ONLY its own assigned criterion" in prompt
 
 
+def test_reconciliation():
+    from auto_as.panel import CRITERION_REVIEWERS, build_reconciliation_prompt, reconcile_criteria
+
+    data = {
+        "submission": {"scenario": "x"},
+        "static_analysis": {"categories": {"tools": True}, "matches": {"tools": [{"file": "a.py", "line": "1", "text": "t"}]}},
+        "git_analysis": {"available": True, "authors": {"a": 2, "b": 2}},
+        "browser": {"available": True, "steps": [{"status": "success"}], "console_errors": []},
+    }
+    records = reconcile_criteria(data)
+    assert len(records) == 5
+    assert {r["criterion"] for r in records} == set(RUBRIC)
+    for record in records:
+        assert CRITERION_REVIEWERS[record["criterion"]]["primary"] == record["primary_persona"]
+        assert CRITERION_REVIEWERS[record["criterion"]]["secondary"] == record["secondary_persona"]
+        assert 0 <= record["proposed_score"] <= record["max_score"]
+        assert record["unresolved"] is False  # 로컬 동점
+        assert record["comparison"] and record["challenge"] and record["rebuttal"]
+    assert reconcile_criteria(data) == records  # 결정론
+
+    empty = reconcile_criteria({"submission": {}, "static_analysis": {"categories": {}}, "git_analysis": {}})
+    operational = next(r for r in empty if r["criterion"] == "operational_quality")
+    assert operational["proposed_score"] == 0
+
+    prompt = build_reconciliation_prompt(data)
+    assert all(criterion in prompt for criterion in RUBRIC)
+    assert '"unresolved"' in prompt
+    assert "reconciliation" in prompt.lower()
+
+
 def test_test_file_path_is_contained():
     with tempfile.TemporaryDirectory() as directory:
         input_path = Path(directory) / "submission.json"
