@@ -471,7 +471,7 @@
           "4",
           "6"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -479,9 +479,10 @@
             "description": "Confirm the stable IDs used by the official rubric, five scoring personas, and coordinator before adding assignment configuration.",
             "dependencies": [],
             "details": "Inspect scoring and persona definitions from prerequisite work, then document the exact criterion and persona IDs that the assignment model must reference. Explicitly identify the coordinator ID as non-scoring.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Add or update a focused check that the selected IDs resolve to the canonical rubric and persona registries.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-07-15T06:27:49.761Z"
           },
           {
             "id": 2,
@@ -491,9 +492,10 @@
               1
             ],
             "details": "Encode assignments[criterion] as two role-tagged entries. Set Problem & Wow to VC/IT creator, AI Implementation to open-source developer/paper reviewer, Completeness to staff engineer/open-source developer, Operational Quality to paper reviewer/staff engineer, and Presentation & Collaboration to IT creator/VC, in primary/secondary order.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit-test that the default mapping exactly matches all five required criterion-to-reviewer and role assignments.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-07-15T06:27:49.767Z"
           },
           {
             "id": 3,
@@ -504,9 +506,10 @@
               2
             ],
             "details": "Implement validation for known criterion IDs, known scoring-persona IDs, valid primary and secondary roles, exactly two distinct reviewers per criterion, one primary and one secondary entry, exactly two owned criteria per scoring persona, and complete coordinator exclusion. Return actionable validation errors for malformed configurations.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test valid defaults plus failures for unknown IDs, missing criteria, duplicate reviewers, invalid roles, coordinator inclusion, incorrect reviewer counts, and unequal persona ownership.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-07-15T06:27:49.772Z"
           },
           {
             "id": 4,
@@ -517,9 +520,10 @@
               3
             ],
             "details": "Replace any implicit, positional, or hard-coded criterion ownership lookup with the configurable assignment model. Ensure downstream consumers receive reviewer persona IDs together with primary or secondary roles and fail early when configuration validation does not pass.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Use an integration-level test to verify each criterion resolves to its two configured reviewers and preserves primary versus secondary role metadata.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-07-15T06:27:49.780Z"
           },
           {
             "id": 5,
@@ -532,12 +536,14 @@
               4
             ],
             "details": "Add a documentation table listing all five criteria, primary reviewer, and secondary reviewer. Explain that the mapping is adjustable, every criterion requires exactly two reviewers, every scoring persona owns exactly two criteria, and the coordinator is excluded from criterion scoring assignments.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Documentation review or automated content test verifies the five table rows, all ten role assignments, the 2:2 invariants, and the coordinator exclusion statement.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-07-15T06:27:49.790Z"
           }
         ],
-        "owner": "P2-debate"
+        "owner": "P2-debate",
+        "updatedAt": "2026-07-15T06:27:49.790Z"
       },
       {
         "id": "8",
@@ -1241,9 +1247,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-07-15T04:58:39.548Z",
+      "lastModified": "2026-07-15T06:27:49.791Z",
       "taskCount": 16,
-      "completedCount": 1,
+      "completedCount": 6,
       "tags": [
         "master"
       ]
