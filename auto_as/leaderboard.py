@@ -4,13 +4,15 @@ import html
 import json
 from pathlib import Path
 
+from .scoring import RUBRIC
+
 
 BADGES = {
     "problem_wow": "가장 대담한 도전상",
-    "agent_design": "설계 장인상",
+    "ai_implementation": "설계 장인상",
     "completeness": "제로 버그상",
-    "operations": "안전제일상",
-    "collaboration": "원팀상",
+    "operational_quality": "안전제일상",
+    "presentation_collaboration": "원팀상",
 }
 
 
@@ -36,9 +38,9 @@ def assign_badges(results: list[dict]) -> dict[str, list[str]]:
                 continue
             if key == "completeness":
                 browser = result.get("browser") or {}
-                if value != 20 or browser.get("console_errors"):
+                if value != RUBRIC["completeness"]["max_score"] or browser.get("console_errors"):
                     continue
-            if key == "operations" and value != 20:
+            if key == "operational_quality" and value != RUBRIC["operational_quality"]["max_score"]:
                 continue
             candidates.append(result)
         if candidates:

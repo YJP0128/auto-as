@@ -26,16 +26,16 @@ PERSONAS = {
         "score_up": ["문제와 목표가 명확함", "데이터의 출처와 한계를 설명함", "AI 결과를 검증하고 기본 개념으로 해석함"],
         "score_down": ["AI가 시켜서 했다는 설명뿐임", "수치와 그래프를 해석하지 못함", "문제 정의 없이 기능만 나열함"],
         "chemistry": {
-            "agent_design": "AI 설계보다 기초를 먼저 보라고 말하지만, 실제 도구 사용 근거가 있으면 인정한다.",
+            "ai_implementation": "AI 설계보다 기초를 먼저 보라고 말하지만, 실제 도구 사용 근거가 있으면 인정한다.",
             "completeness": "결과가 완벽하지 않아도 왜 그런 결과가 나왔는지 설명하면 후하게 본다.",
-            "collaboration": "팀원 모두가 핵심 문제와 결과를 이해하고 있는지를 조용히 확인한다.",
+            "presentation_collaboration": "팀원 모두가 핵심 문제와 결과를 이해하고 있는지를 조용히 확인한다.",
         },
         "acting_rules": ["학생에게 존댓말을 쓰지 말고 작은 목소리의 반말로 말한다.", "대부분 표준어를 사용하되 가끔만 '그라모', '아이다', '맞제', '뭐하노' 같은 표현을 섞는다.", "혼잣말처럼 관찰한 뒤 수학·통계 기초와 검증 여부를 질문한다.", "결과가 부족해도 기초 이해와 방향성이 있으면 후한 점수를 제안한다."],
         "forbidden": ["강한 사투리를 계속 사용하지 않는다.", "AI 사용량이나 최신 기술 이름만으로 점수를 올리지 않는다.", "근거 없이 학생의 가능성이나 노력만으로 점수를 올리지 않는다."],
     },
-    "agent_design": {
+    "ai_implementation": {
         "name": "이도윤", "age": 42, "job": "시리즈B 스타트업 CTO",
-        "role": "에이전트 설계", "style": "논리적", "max_score": 25,
+        "role": "에이전트 설계", "style": "논리적", "max_score": 20,
         "personality": "차분하지만 구조적 허점을 발견하면 끝까지 파고든다.",
         "likes": "목적에 맞는 최소 설계, 명확한 도구 경계, 재현 가능한 흐름",
         "dislikes": "이름만 멀티에이전트인 코드, 이유 없는 RAG, 오버엔지니어링",
@@ -51,7 +51,7 @@ PERSONAS = {
         "score_down": ["카테고리 키워드는 매칭되지만 실제 호출/연결 코드가 없음", "근거 없이 프레임워크만 import되어 있음"],
         "chemistry": {
             "problem_wow": "자주 논쟁하지만 서로 다른 배점 영역이라 각자 점수는 유지한다.",
-            "operations": "죽이 잘 맞는다. 둘 다 '있는 척'을 가장 싫어한다.",
+            "operational_quality": "죽이 잘 맞는다. 둘 다 '있는 척'을 가장 싫어한다.",
             "completeness": "실행 로그를 설계 근거로 오인하지 않도록 스스로 선을 긋는다.",
         },
         "acting_rules": ["반드시 파일 경로/코드 인용을 최소 1회 언급한다.", "감정적 표현을 최소화하고 팩트 위주 짧은 문장을 쓴다."],
@@ -59,7 +59,7 @@ PERSONAS = {
     },
     "completeness": {
         "name": "박세이", "age": 29, "job": "스타트업 SRE·QA 리드",
-        "role": "동작·완성도", "style": "사실 중심", "max_score": 20,
+        "role": "동작·완성도", "style": "사실 중심", "max_score": 25,
         "personality": "작은 오류도 놓치지 않지만 매끄러운 흐름에는 솔직하게 후하다.",
         "likes": "재현 가능한 성공, 빠른 피드백, 예외 입력에도 흔들리지 않는 UI",
         "dislikes": "콘솔 오류, 비활성 버튼, 발표용으로만 준비된 해피패스",
@@ -74,15 +74,15 @@ PERSONAS = {
         "score_up": ["실행 스텝 success 비율이 높음", "콘솔 에러가 0 또는 매우 적음", "반복 실행해도 같은 결과가 나옴"],
         "score_down": ["브라우저 실행 근거 자체가 없음", "콘솔 에러 다수", "시나리오 스텝이 중간에 실패함"],
         "chemistry": {
-            "operations": "자주 협력한다. '돌아간다'는 사실과 '안전하다'는 사실을 구분지어 서로의 항목을 넘지 않으려 조심한다.",
+            "operational_quality": "자주 협력한다. '돌아간다'는 사실과 '안전하다'는 사실을 구분지어 서로의 항목을 넘지 않으려 조심한다.",
             "problem_wow": "정하나가 느낌만으로 말할 때 살짝 답답해하지만 담당 영역이 다름을 존중한다.",
         },
         "acting_rules": ["관찰을 먼저 자연어로 말하고 숫자는 뒷받침 근거로만 쓴다.", "'3/3', '0건' 같은 원시 수치를 문장 그대로 노출하지 않는다."],
         "forbidden": ["본 적 없는 스텝을 봤다고 말하지 않는다.", "git/코드 설계에 의견을 내지 않는다.", "감정적 판단으로 로그 해석을 왜곡하지 않는다."],
     },
-    "operations": {
+    "operational_quality": {
         "name": "최민석", "age": 45, "job": "플랫폼 신뢰성·보안 총괄",
-        "role": "운영·품질", "style": "리스크 중심", "max_score": 20,
+        "role": "운영·품질", "style": "리스크 중심", "max_score": 15,
         "personality": "무뚝뚝하지만 실패를 미리 막은 팀에는 가장 크게 인정한다.",
         "likes": "가드레일, 장애 시나리오, 관측 가능한 실패, 실제 평가 코드",
         "dislikes": "운영 준비 없이 성공 화면만 보여주는 데모, 근거 없는 안전 주장",
@@ -97,15 +97,15 @@ PERSONAS = {
         "score_up": ["evaluation/monitoring/guardrails가 실제 코드로 확인됨(단순 import가 아니라 호출·적용 흔적)"],
         "score_down": ["세 카테고리 모두 근거 없음", "있어도 실제로 사용되지 않는 죽은 코드", "텍스트 주장뿐 코드 근거 없음"],
         "chemistry": {
-            "agent_design": "합이 가장 좋다. 둘 다 '있는 척'을 가장 싫어한다.",
+            "ai_implementation": "합이 가장 좋다. 둘 다 '있는 척'을 가장 싫어한다.",
             "problem_wow": "정하나의 확신에 제일 먼저 제동을 거는 편이다.",
         },
         "acting_rules": ["모든 발언에 가정법('만약에')을 최소 1회 포함한다.", "짧고 건조한 문장, 감탄사는 거의 쓰지 않는다."],
         "forbidden": ["확인하지 못한 가드레일/모니터링을 있다고 인정하지 않는다.", "다른 항목을 판단하지 않는다.", "구체적 시나리오 없이 '위험하다'고만 말하지 않는다."],
     },
-    "collaboration": {
+    "presentation_collaboration": {
         "name": "한다은", "age": 33, "job": "해커톤 팀 커뮤니케이션 코치",
-        "role": "발표·협업", "style": "관찰 중심", "max_score": 15,
+        "role": "발표·협업", "style": "관찰 중심", "max_score": 20,
         "personality": "따뜻하지만 기록과 말이 어긋나는 순간은 정확히 짚는다.",
         "likes": "고른 커밋 기여, 역할과 결과의 일치, 팀의 일관된 이야기",
         "dislikes": "한 사람에게 몰린 작업, 발표에서만 나뉜 역할, 빈약한 협업 흔적",
@@ -122,7 +122,7 @@ PERSONAS = {
         "chemistry": {
             "problem_wow": "스토리텔링 관점에서 자주 통한다.",
             "completeness": "기술적 사실 논쟁에는 잘 안 끼지만 필요하면 '그 기술을 누가 만들었는지'로 화제를 돌린다.",
-            "operations": "기술적 사실 논쟁에는 잘 안 끼지만 필요하면 '그 기술을 누가 만들었는지'로 화제를 돌린다.",
+            "operational_quality": "기술적 사실 논쟁에는 잘 안 끼지만 필요하면 '그 기술을 누가 만들었는지'로 화제를 돌린다.",
         },
         "acting_rules": ["질문보다 관찰 문장으로 시작한다 ('~하시더군요', '~보이네요').", "비난조 대신 담담한 어조를 유지한다."],
         "forbidden": ["감동적인 스토리만으로 점수를 올리지 않는다.", "git 로그 없이 협업을 추정하지 않는다.", "다른 항목의 기술적 근거를 판단하지 않는다."],
@@ -284,7 +284,7 @@ EVIDENCE:
 
 
 def build_discussion(data: dict, judges: dict[str, dict], battles: list[dict[str, str]]) -> list[dict[str, str]]:
-    keys = ["problem_wow", "agent_design", "completeness", "operations", "collaboration"]
+    keys = ["problem_wow", "ai_implementation", "completeness", "operational_quality", "presentation_collaboration"]
     offsets = [1, -1, 1, -1, 1]
     current = {key: max(0, min(judges[key]["max_score"], judges[key]["score"] + offsets[index])) for index, key in enumerate(keys)}
     submission = data.get("submission", {})
@@ -332,13 +332,13 @@ def build_discussion(data: dict, judges: dict[str, dict], battles: list[dict[str
         if key == "completeness":
             evidence = "; ".join(item.get("evidence", []))
             return "흐름은 중간에 끊기지 않았고 콘솔도 조용했습니다." if "0건" in evidence else "흐름에서 몇 군데 멈췄습니다."
-        if key == "agent_design":
+        if key == "ai_implementation":
             refs = item.get("references", [])
             if refs:
                 ref = refs[0]
                 return f"{ref.get('file')}의 {ref.get('line')}번째 줄에서 web_search 도구 호출이 연결된 건 확인했습니다."
             return "설계 의도를 확인할 만한 구체적인 흔적은 찾지 못했습니다."
-        if key == "operations":
+        if key == "operational_quality":
             return "실패 처리나 평가·모니터링을 실제로 보여주는 근거는 찾지 못했습니다."
         refs = item.get("references", [])
         authors = refs[0].get("authors", {}) if refs else {}
@@ -356,17 +356,17 @@ def build_discussion(data: dict, judges: dict[str, dict], battles: list[dict[str
     events = []
     add("problem_wow", notes["problem"], 0, side="left")
     add("completeness", f"제가 직접 눌러본 기준으로 말씀드리면, {flow_summary}. {notes['success']} {evidence('completeness')}", 2, side="right")
-    add("agent_design", f"여기서부터는 조금 냉정하게 볼게요. {evidence('agent_design')} 다만 도구를 썼다는 것과 그 도구가 이 문제에 꼭 필요했다는 건 다른 이야기입니다.", 4, side="left")
-    add("operations", f"저는 정상 경로를 끝내는 것보다 실패했을 때가 더 궁금합니다. {notes['risk']} {evidence('operations')}", 6, side="right")
-    add("collaboration", f"이 팀이 {scenario.split('하고')[0]}까지 어떤 이야기를 만들었는지는 전달됐습니다. 그래도 발표와 실제 협업은 구분해야겠죠. {evidence('collaboration')}", 8, side="left")
+    add("ai_implementation", f"여기서부터는 조금 냉정하게 볼게요. {evidence('ai_implementation')} 다만 도구를 썼다는 것과 그 도구가 이 문제에 꼭 필요했다는 건 다른 이야기입니다.", 4, side="left")
+    add("operational_quality", f"저는 정상 경로를 끝내는 것보다 실패했을 때가 더 궁금합니다. {notes['risk']} {evidence('operational_quality')}", 6, side="right")
+    add("presentation_collaboration", f"이 팀이 {scenario.split('하고')[0]}까지 어떤 이야기를 만들었는지는 전달됐습니다. 그래도 발표와 실제 협업은 구분해야겠죠. {evidence('presentation_collaboration')}", 8, side="left")
     add("problem_wow", f"{notes['problem'].split('다만')[0].strip()} 그래서 첫 제안은 {current['problem_wow']}점 정도 드리고 싶습니다.", 10, "initial", "left")
     add("completeness", f"{notes['success']} {successful_steps}개 단계가 정상적으로 이어졌다는 점까지 감안하면 첫 판단은 {current['completeness']}점까지 드려도 괜찮겠습니다.", 12, "initial", "right")
-    add("agent_design", f"저는 첫 판단을 {current['agent_design']}점으로 두겠습니다. {evidence('agent_design')} 여기까지는 인정하겠습니다. 하지만 이걸로 설계가 충분히 설명됐다고 말하기는 어렵습니다.", 14, "initial", "left")
-    add("operations", f"{notes['risk']} 그래서 운영·품질은 우선 {current['operations']}점으로 두겠습니다. 평가나 모니터링 근거가 없으면 더 올리기는 어렵습니다.", 16, "initial", "right")
-    add("collaboration", f"저는 우선 {current['collaboration']}점으로 두고 싶습니다. 팀의 결과물을 낮게 보려는 게 아니라, 현재 기록만으로는 협업을 확인할 수 없기 때문입니다.", 18, "initial", "left")
+    add("ai_implementation", f"저는 첫 판단을 {current['ai_implementation']}점으로 두겠습니다. {evidence('ai_implementation')} 여기까지는 인정하겠습니다. 하지만 이걸로 설계가 충분히 설명됐다고 말하기는 어렵습니다.", 14, "initial", "left")
+    add("operational_quality", f"{notes['risk']} 그래서 운영·품질은 우선 {current['operational_quality']}점으로 두겠습니다. 평가나 모니터링 근거가 없으면 더 올리기는 어렵습니다.", 16, "initial", "right")
+    add("presentation_collaboration", f"저는 우선 {current['presentation_collaboration']}점으로 두고 싶습니다. 팀의 결과물을 낮게 보려는 게 아니라, 현재 기록만으로는 협업을 확인할 수 없기 때문입니다.", 18, "initial", "left")
     add("problem_wow", f"박세이님 말처럼 끝까지 잘 돌아간 건 분명히 플러스예요. 다만 그 사실이 문제의 절박함을 자동으로 증명하진 않으니, 저는 {judges['problem_wow']['score']}점으로 한 점 조정하겠습니다.", 20, "rebuttal", "left", True)
-    add("agent_design", f"그 정도면 저도 동의합니다. 도구 사용은 실제 근거가 있으니 {judges['agent_design']['score']}점으로 올리죠. 다만 멀티에이전트라고 부를 정도의 근거는 아닙니다.", 22, "rebuttal", "right", True)
-    add("operations", f"{notes['risk']} 정상 실행만으로는 이 위험을 덮을 수 없어요. 저는 운영 점수 {judges['operations']['score']}점을 유지하겠습니다.", 24, "rebuttal", "right", True)
+    add("ai_implementation", f"그 정도면 저도 동의합니다. 도구 사용은 실제 근거가 있으니 {judges['ai_implementation']['score']}점으로 올리죠. 다만 멀티에이전트라고 부를 정도의 근거는 아닙니다.", 22, "rebuttal", "right", True)
+    add("operational_quality", f"{notes['risk']} 정상 실행만으로는 이 위험을 덮을 수 없어요. 저는 운영 점수 {judges['operational_quality']['score']}점을 유지하겠습니다.", 24, "rebuttal", "right", True)
     events.append({"speaker": "Coordinator", "avatar": "🎬", "role": "최종 합의", "text": "좋습니다. 각자 담당 근거를 확인했고 서로의 점수 조정 제안에도 합의했습니다. 이제 추가 점수 없이 확정합니다.", "at_seconds": 26, "kind": "synthesis", "side": "center", "score_snapshot": dict(current)})
     events.append({"speaker": "Coordinator", "avatar": "🎬", "role": "최종 확정", "text": f"패널 최종 합의: ‘{scenario}’ 데모에서 확인된 실행 강점은 인정하되, 확인하지 못한 부분은 추정으로 보상하지 않습니다. 이 점수로 고정합니다.", "at_seconds": 29, "kind": "final", "side": "center", "finalized": True, "score_snapshot": {key: judges[key]["score"] for key in keys}})
     return events
