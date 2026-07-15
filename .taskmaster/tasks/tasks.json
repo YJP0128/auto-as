@@ -1,0 +1,1156 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Replace the official rubric with configurable criterion definitions",
+        "description": "Update the scoring foundation to use the five official criteria, names, weights, definitions, and evidence sources while preserving configuration-based score adjustment.",
+        "details": "In scoring.py, replace the hard-coded rubric with a canonical configurable RUBRIC structure: problem_wow=20, ai_implementation=20, completeness=25, operational_quality=15, and presentation_collaboration=20. Store display label, max_score, definition, and allowed evidence-source guidance per criterion. Update scoring formulas to cap scores by each configured max and total to 100. Rename all former agent-design references to AI implementation. Narrow operational-quality semantics to golden-dataset construction and performance/quality evaluation rather than generic monitoring or guardrails. Pseudo-code: `for criterion in RUBRIC: score = clamp(raw_score, 0, rubric[criterion].max_score); total += score`. Do not execute submitted repository code; only consume pre-existing static-analysis and browser-run artifacts.",
+        "testStrategy": "Add unit tests asserting the exact five criterion keys, labels, weights, total of 100, score caps, and configurable override behavior. Verify obsolete labels and weights are absent from score output.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Audit existing scoring rubric and legacy criterion usage",
+            "description": "Identify the current hard-coded rubric, scoring paths, legacy agent-design terminology, and all callers that consume criterion names or maxima.",
+            "dependencies": [],
+            "details": "Inspect scoring.py and related score serialization paths to document existing keys, weights, cap logic, adjustment mechanisms, output fields, and references to generic operational monitoring or guardrails.",
+            "status": "pending",
+            "testStrategy": "Create an inventory-based test or search checklist confirming all legacy criterion references and duplicated score constants are identified before migration."
+          },
+          {
+            "id": 2,
+            "title": "Define the canonical configurable rubric structure",
+            "description": "Implement a single RUBRIC configuration containing the five official criteria and their complete metadata.",
+            "dependencies": [
+              1
+            ],
+            "details": "In scoring.py, define ordered canonical entries for problem_wow (20), ai_implementation (20), completeness (25), operational_quality (15), and presentation_collaboration (20). Each entry must include display label, max_score, definition, and permitted evidence-source guidance. Define Operational Quality specifically around golden-dataset construction and performance or quality evaluation.",
+            "status": "pending",
+            "testStrategy": "Add unit tests that assert the exact five keys, official labels, individual maxima, required metadata fields, and a max-score sum of 100."
+          },
+          {
+            "id": 3,
+            "title": "Refactor score computation to consume rubric configuration",
+            "description": "Replace fixed scoring constants and formulas with configuration-driven per-criterion score normalization and total calculation.",
+            "dependencies": [
+              2
+            ],
+            "details": "Update scoring functions to iterate over RUBRIC entries, clamp every raw or adjusted criterion score to zero through that entry's max_score, and calculate totals from configured maxima. Preserve supported configuration-based adjustment behavior while ensuring no adjustment can exceed criterion caps or a total of 100.",
+            "status": "pending",
+            "testStrategy": "Add parameterized tests for negative, in-range, and over-limit raw scores; verify configured caps apply, totals never exceed 100, and a safe test override of rubric maxima changes calculations as expected."
+          },
+          {
+            "id": 4,
+            "title": "Migrate scoring semantics and outputs to official terminology",
+            "description": "Rename former agent-design scoring concepts to AI Implementation and remove obsolete operational-quality interpretations from scoring output.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Update criterion mappings, score payloads, explanations, evidence guidance, validation messages, and comments so they use AI Implementation consistently. Ensure operational-quality prompts or scoring descriptions accept only evidence relevant to golden datasets and performance or quality evaluation, not generic observability, monitoring, or guardrails alone.",
+            "status": "pending",
+            "testStrategy": "Test representative scoring outputs and explanations for official labels and semantic guidance; assert obsolete Agent Design labels, old weights, and disallowed generic operational-quality rationale are absent."
+          },
+          {
+            "id": 5,
+            "title": "Add regression coverage for canonical rubric scoring behavior",
+            "description": "Validate the final rubric contract, score caps, evidence guidance, and backward-incompatible terminology removal through focused unit tests.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Extend scoring tests to cover canonical configuration loading, ordered criterion traversal, score clamping, total calculation, configurable adjustment behavior, exact output labels, and evidence-source metadata. Use only fixtures and static-analysis or browser-run artifacts in tests; do not introduce execution of submitted repository code.",
+            "status": "pending",
+            "testStrategy": "Run the scoring test suite and assert exact criterion keys, 20/20/25/15/20 maxima, total 100, capped adjusted scores, override behavior, and absence of all legacy names and score-max wording."
+          }
+        ],
+        "owner": "P3-core"
+      },
+      {
+        "id": 2,
+        "title": "Rebuild pipeline signals around official evidence sources",
+        "description": "Align pipeline evidence signals with the new rubric, especially golden-set and evaluation evidence for operational quality.",
+        "details": "Update pipeline.py SIGNALS and any evidence extraction/normalization logic so each criterion receives only relevant evidence references. For operational quality, prioritize detected golden datasets, eval scripts, evaluation metrics, and evaluation-result artifacts. Preserve static-analysis, README/pitch, scenario, browser/Playwright, console-error, presentation-material, and git-log artifacts for their specified criteria. Produce normalized evidence objects with stable IDs, source type, location/reference, excerpt or summary, and applicable criterion. Pseudo-code: `evidence = {id, criterion_candidates, source_type, reference, text}; signals[criterion] = filter(evidence, allowed_sources[criterion])`. Explicitly represent absent evidence rather than fabricating evidence.",
+        "testStrategy": "Use fixture analysis/browser artifacts to verify signal routing for all five criteria, including positive golden-set/eval detection and an explicit no-evidence result when such artifacts are absent. Assert repository source is never executed by the pipeline.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Inspect rubric definitions and current pipeline signal flow",
+            "description": "Map the current SIGNALS structure, evidence extractors, and downstream consumers against the official criterion definitions from Task 1.",
+            "dependencies": [],
+            "details": "Review pipeline.py and related scoring/report modules to identify all existing criterion names, source types, evidence fields, routing rules, and assumptions that must change.",
+            "status": "pending",
+            "testStrategy": "Document a source-to-criterion mapping and verify it contains only the five official rubric keys."
+          },
+          {
+            "id": 2,
+            "title": "Define normalized evidence schema and stable identifier rules",
+            "description": "Create a canonical evidence representation that preserves provenance and explicitly supports missing evidence.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement or document a normalized object containing stable id, criterion_candidates, source_type, reference/location, text or summary, and an explicit absence/availability state where no artifact exists.",
+            "status": "pending",
+            "testStrategy": "Add unit tests for deterministic IDs, required fields, normalization of representative artifacts, and explicit no-evidence objects."
+          },
+          {
+            "id": 3,
+            "title": "Implement official artifact extraction and normalization",
+            "description": "Update extraction logic to detect permitted artifact classes without executing submitted repository source code.",
+            "dependencies": [
+              2
+            ],
+            "details": "Normalize static-analysis, README/pitch, scenario, browser/Playwright, console-error, presentation-material, git-log, golden-dataset, eval-script, evaluation-metric, and evaluation-result artifacts into the canonical schema.",
+            "status": "pending",
+            "testStrategy": "Use static fixture repositories and saved browser artifacts to assert each supported source type produces correctly normalized evidence without source execution."
+          },
+          {
+            "id": 4,
+            "title": "Rebuild criterion signal routing with allowed evidence sources",
+            "description": "Replace legacy SIGNALS routing so every official criterion receives only its rubric-approved evidence references.",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "Define allowed_sources per official criterion, filter normalized evidence by criterion candidates and allowed sources, and prioritize golden datasets, evaluation scripts, metrics, and result artifacts for operational quality.",
+            "status": "pending",
+            "testStrategy": "Add routing tests covering all five criteria, forbidden-source exclusion, and positive operational-quality routing for each evaluation artifact class."
+          },
+          {
+            "id": 5,
+            "title": "Add regression coverage for gaps and downstream signal contracts",
+            "description": "Validate stable pipeline output, explicit evidence gaps, and compatibility of normalized signals with scoring and report consumers.",
+            "dependencies": [
+              4
+            ],
+            "details": "Update fixtures and tests to assert absent operational evidence is represented as insufficient rather than fabricated, signal IDs remain stable across runs, and downstream consumers receive references and source metadata.",
+            "status": "pending",
+            "testStrategy": "Run focused pipeline and smoke tests using fixtures with and without eval artifacts; assert deterministic output, no repository execution, and explicit no-evidence results."
+          }
+        ],
+        "owner": "P3-core"
+      },
+      {
+        "id": 3,
+        "title": "Update downstream rubric labels, badges, and score presentation",
+        "description": "Synchronize panel, report, and leaderboard terminology and maximum scores with the official rubric.",
+        "details": "Update panel.py max-score references and criterion labels, report.py labels, and leaderboard.py badge copy to consume the canonical rubric rather than duplicate literals. Ensure displayed category names are Problem & Wow, AI Implementation, Completeness, Operational Quality, and Presentation & Collaboration (or the product’s approved localized labels), with maxima 20/20/25/15/20. Remove stale Agent Design and old score-max wording. Keep rendering driven by configuration so adjusted rubric values propagate consistently.",
+        "testStrategy": "Render representative report and leaderboard fixtures and assert each new label, maximum score, total, and badge wording is present. Assert old criterion labels/weights do not appear.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Inspect canonical rubric API and downstream display usage",
+            "description": "Identify the canonical rubric structure introduced by the scoring foundation and map every panel, report, and leaderboard location that currently embeds criterion labels or score maxima.",
+            "dependencies": [],
+            "details": "Review scoring configuration plus panel.py, report.py, leaderboard.py, templates, and related tests. Catalog stale literals such as Agent Design and prior max-score wording, then define the configuration fields each renderer needs.",
+            "status": "pending",
+            "testStrategy": "Add or update a focused inventory test or assertions that identify all rendered rubric criteria through the canonical configuration."
+          },
+          {
+            "id": 2,
+            "title": "Create shared rubric display helpers for renderers",
+            "description": "Implement a configuration-driven adapter that exposes ordered criterion labels, maxima, totals, and presentation-ready score metadata to downstream views.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use the canonical RUBRIC definitions rather than duplicate constants. Preserve official criterion ordering and support approved localized labels where the configuration provides them. Ensure helpers derive the total dynamically from configured maxima.",
+            "status": "pending",
+            "testStrategy": "Unit test the helper with the default 20/20/25/15/20 rubric and a modified configuration, asserting labels, maxima, order, and total update automatically."
+          },
+          {
+            "id": 3,
+            "title": "Update panel score labels and maximum-score presentation",
+            "description": "Refactor panel.py to render category names and score limits from the shared rubric display metadata instead of hard-coded text.",
+            "dependencies": [
+              2
+            ],
+            "details": "Replace all legacy criterion labels, Agent Design references, and old denominator values in panel views. Render Problem & Wow, AI Implementation, Completeness, Operational Quality, and Presentation & Collaboration with their configured maxima.",
+            "status": "pending",
+            "testStrategy": "Render representative panel fixtures and assert every official label and configured maximum appears, while Agent Design and obsolete denominator text do not appear."
+          },
+          {
+            "id": 4,
+            "title": "Refactor report sections to use canonical rubric terminology",
+            "description": "Update report.py and report templates so criterion headings, score summaries, and totals are generated from rubric configuration.",
+            "dependencies": [
+              2
+            ],
+            "details": "Pass ordered rubric presentation data into report rendering and bind headings, per-criterion denominators, and aggregate total to it. Remove duplicated report-specific labels and ensure missing or adjusted criterion data has a safe display path.",
+            "status": "pending",
+            "testStrategy": "Render report fixtures for default and overridden rubric values; assert all headings, 20/20/25/15/20 defaults, and computed total are correct with no stale labels."
+          },
+          {
+            "id": 5,
+            "title": "Align leaderboard badges and add downstream regression coverage",
+            "description": "Replace leaderboard badge copy and score wording with canonical rubric-derived content, then verify all downstream surfaces stay synchronized.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Update leaderboard.py/templates to consume shared display metadata for badges and score-related messages. Add cross-renderer regression tests covering panel, report, and leaderboard, including changed configuration propagation and absence of legacy wording.",
+            "status": "pending",
+            "testStrategy": "Render panel, report, and leaderboard fixtures and assert official labels, maxima, totals, and rubric-aware badge copy. Assert old Agent Design labels and previous score-max wording are absent across all output."
+          }
+        ],
+        "owner": "P4-report"
+      },
+      {
+        "id": 4,
+        "title": "Define persona specifications and publish the judge-personas document",
+        "description": "Create the final five fictional parody-inspired judge personas with clear expertise, evaluation responsibility, voice, preferences, criticism style, and example utterances.",
+        "details": "Update docs/judge-personas.md for the five default personas: IU-inspired VC investor for Problem & Wow, Park Myung-soo-inspired IT creator for Presentation & Collaboration, Son Heung-min-inspired open-source developer for AI Implementation, Kang Ho-dong-inspired FAANG staff engineer for Completeness, and Baek Jong-won-inspired paper reviewer for Operational Quality. State clearly that names are parody motifs only and no real person’s actual speech or personality is reproduced. For every persona document role, domain expertise, favored evidence, critique tendencies, permitted stylistic characteristics, prohibited unsupported scoring behavior, and representative synthetic utterances. Keep all score decisions tied to rubric evidence.",
+        "testStrategy": "Review/document test verifies exactly five documented personas, required sections per persona, all five primary criterion assignments, and an explicit fictional-parody disclaimer. Validate examples do not claim unsupported facts or alter scores without evidence.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Inspect rubric and existing persona documentation conventions",
+            "description": "Review the official criterion definitions and current documentation structure before drafting personas.",
+            "dependencies": [],
+            "details": "Read scoring.py and existing docs to capture exact criterion names, evidence guidance, terminology, and Markdown conventions for the new document.",
+            "status": "pending",
+            "testStrategy": "Confirm all five canonical rubric criteria and their evidence constraints are recorded for use in the persona specifications."
+          },
+          {
+            "id": 2,
+            "title": "Define the shared fictional-parody and scoring-evidence policy",
+            "description": "Draft document-wide guardrails governing fictional motifs, voice, and evidence-based scoring.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create an opening policy that names all personas as fictional parody-inspired motifs only, disclaims reproduction of real speech or personality, and requires every score decision to cite applicable rubric evidence.",
+            "status": "pending",
+            "testStrategy": "Review the policy text for an explicit parody disclaimer, prohibition on real-person imitation, and requirement that scores remain evidence-grounded."
+          },
+          {
+            "id": 3,
+            "title": "Specify the VC investor and IT creator judge personas",
+            "description": "Document the two personas responsible for Problem & Wow and Presentation & Collaboration.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Add IU-inspired fictional VC investor coverage for Problem & Wow and Park Myung-soo-inspired fictional IT creator coverage for Presentation & Collaboration, including role, expertise, favored evidence, critique tendencies, permitted style, prohibited scoring behavior, and synthetic utterances.",
+            "status": "pending",
+            "testStrategy": "Check both profiles contain every required section, assign the intended primary criterion, and use only synthetic, non-imitative utterances tied to rubric evidence."
+          },
+          {
+            "id": 4,
+            "title": "Specify the implementation, completeness, and operations personas",
+            "description": "Document the remaining three fictional judges and their primary evaluation responsibilities.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Add Son Heung-min-inspired fictional open-source developer for AI Implementation, Kang Ho-dong-inspired fictional FAANG staff engineer for Completeness, and Baek Jong-won-inspired fictional paper reviewer for Operational Quality, with all required profile fields and evidence limits.",
+            "status": "pending",
+            "testStrategy": "Verify all three profiles include complete required sections, correct primary criterion ownership, and no unsupported claims, bias, or evidence-free score changes."
+          },
+          {
+            "id": 5,
+            "title": "Publish and validate the complete judge-personas document",
+            "description": "Assemble, format, and review docs/judge-personas.md as the final authoritative persona specification.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Update docs/judge-personas.md with exactly five default personas, clear criterion assignments, consistent headings, evidence-bound scoring rules, and representative synthetic utterances; remove conflicting or obsolete persona content.",
+            "status": "pending",
+            "testStrategy": "Perform a documentation validation that asserts exactly five personas, all five primary criteria are covered once, each profile has required sections, the disclaimer exists, and example utterances do not authorize unsupported scoring."
+          }
+        ],
+        "owner": "P1-persona"
+      },
+      {
+        "id": 5,
+        "title": "Create persona profile-image assets for leaderboard cards",
+        "description": "Provide one non-infringing profile image per fictional persona and make the assets available for leaderboard use.",
+        "details": "Create or add five project-approved, original/appropriately licensed profile-image assets representing the fictional judge archetypes without using real-person likenesses. Use stable asset paths and descriptive alt text. Record asset filename-to-persona mapping in the persona documentation or an adjacent manifest. Keep dimensions/aspect ratio suitable for leaderboard introduction cards and provide a neutral fallback if an asset cannot load.",
+        "testStrategy": "Validate there are exactly five resolvable image paths, each mapped to a known persona. In a rendered HTML fixture, assert images have alt text and fallback styling/path behavior is available.",
+        "priority": "medium",
+        "dependencies": [
+          4
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Identify personas and define image asset requirements",
+            "description": "Confirm the five fictional judge personas and establish a consistent visual specification for their leaderboard profile images.",
+            "dependencies": [],
+            "details": "Review persona definitions, select non-real-person archetypal visual traits, and document target format, dimensions, aspect ratio, naming convention, and licensing/originality requirements.",
+            "status": "pending",
+            "testStrategy": "Verify the specification lists exactly five known personas and prohibits real-person likenesses."
+          },
+          {
+            "id": 2,
+            "title": "Create or source approved fictional persona images",
+            "description": "Produce five original or appropriately licensed images representing the defined fictional judge archetypes.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create or acquire one distinct non-infringing image per persona, ensuring no recognizable real-person likeness is used and retaining attribution or license records when applicable.",
+            "status": "pending",
+            "testStrategy": "Manually review all five images for persona alignment, licensing approval, and absence of real-person likenesses."
+          },
+          {
+            "id": 3,
+            "title": "Optimize and add assets at stable project paths",
+            "description": "Prepare image files for efficient, consistent use in leaderboard introduction cards.",
+            "dependencies": [
+              2
+            ],
+            "details": "Crop and export each approved asset to the selected card-friendly aspect ratio, optimize file size, and add files under stable version-controlled asset paths using descriptive filenames.",
+            "status": "pending",
+            "testStrategy": "Check that exactly five asset files resolve from their committed paths and meet the documented dimensions and format requirements."
+          },
+          {
+            "id": 4,
+            "title": "Document persona-to-asset mappings and alt text",
+            "description": "Record the canonical filename, persona association, and descriptive alt text for every profile image.",
+            "dependencies": [
+              3
+            ],
+            "details": "Update persona documentation or add an adjacent manifest containing each persona identifier, stable asset path, descriptive accessible alt text, and any required license metadata.",
+            "status": "pending",
+            "testStrategy": "Validate that the manifest has five unique known-persona mappings, resolvable paths, non-empty alt text, and no duplicate filenames."
+          },
+          {
+            "id": 5,
+            "title": "Integrate assets with leaderboard fallback behavior",
+            "description": "Make persona images available to leaderboard cards and provide a neutral display fallback for loading failures.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Update leaderboard card rendering or asset configuration to consume the documented paths and alt text, with a neutral placeholder or fallback styling when an image is unavailable or fails to load.",
+            "status": "pending",
+            "testStrategy": "Render an HTML fixture to assert all five images expose alt text and verify a missing or failed image activates the neutral fallback behavior."
+          }
+        ],
+        "owner": "P1-persona"
+      },
+      {
+        "id": 6,
+        "title": "Implement persona configuration in the panel engine",
+        "description": "Replace existing panel personas with the documented five-persona configuration and inject persona constraints into scoring prompts.",
+        "details": "Update panel.py PERSONAS so each persona has stable ID, display name, role, specialty, primary criterion, tone guidance, preferences, critique guidance, and profile-image reference. Build prompt context from these fields rather than ad hoc persona text. Enforce the invariant that voice can affect phrasing only, never rubric score adjustments; prompts must require evidence/references for every scored claim. Include a non-scoring coordinator configuration separate from PERSONAS or explicitly marked `is_scoring_persona=false`.",
+        "testStrategy": "Add panel configuration tests for five scoring personas plus one non-scoring coordinator, stable primary roles, required persona fields, and generated prompt content. Assert prompt instructions require evidence and prohibit personality-only score changes.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          4
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Audit panel engine persona and prompt integration points",
+            "description": "Inspect panel.py and related scoring flow to identify existing persona definitions, ad hoc prompt text, and coordinator behavior that must be replaced.",
+            "dependencies": [],
+            "details": "Map all PERSONAS consumers, prompt builders, scoring entry points, serialization paths, and any assumptions about persona count or role names before changing configuration.",
+            "status": "pending",
+            "testStrategy": "Document affected call sites and run existing panel tests to establish baseline behavior."
+          },
+          {
+            "id": 2,
+            "title": "Define documented scoring personas and coordinator configuration",
+            "description": "Replace the existing persona data with five complete, stable scoring persona configurations and one explicitly non-scoring coordinator configuration.",
+            "dependencies": [
+              1
+            ],
+            "details": "Add stable IDs, display names, roles, specialties, primary criteria, tone guidance, preferences, critique guidance, and profile-image references for every persona. Keep the coordinator outside PERSONAS or set is_scoring_persona to false.",
+            "status": "pending",
+            "testStrategy": "Add configuration tests asserting exactly five scoring personas, one coordinator, required fields, unique stable IDs, and valid primary-role assignments."
+          },
+          {
+            "id": 3,
+            "title": "Build structured persona prompt-context generation",
+            "description": "Create a reusable prompt-context builder that derives reviewer instructions solely from the defined persona fields rather than embedded ad hoc persona prose.",
+            "dependencies": [
+              2
+            ],
+            "details": "Generate structured context containing identity, assigned role and criterion, specialty, preferences, critique approach, profile reference where applicable, and wording-only tone instructions. Ensure callers no longer construct persona text manually.",
+            "status": "pending",
+            "testStrategy": "Unit test generated contexts for each persona, verifying all required configuration fields are represented and legacy ad hoc text is absent."
+          },
+          {
+            "id": 4,
+            "title": "Add scoring invariants and evidence requirements to prompts",
+            "description": "Inject mandatory instructions that persona voice affects phrasing only and that every scored claim must be grounded in evidence or explicit insufficiency.",
+            "dependencies": [
+              3
+            ],
+            "details": "Add shared scoring constraints to all relevant prompt templates: rubric scores cannot change due to personality, authority, or tone; each rationale and score claim requires concrete evidence IDs or references; unsupported evidence must be disclosed.",
+            "status": "pending",
+            "testStrategy": "Assert generated scoring prompts explicitly prohibit personality-only score adjustments and require evidence/references for every scored claim."
+          },
+          {
+            "id": 5,
+            "title": "Integrate configuration into panel flow and validate compatibility",
+            "description": "Wire the new persona context and coordinator separation through the panel engine while preserving expected scoring-flow interfaces and output behavior.",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Update panel prompt assembly and persona lookup paths to use the new configuration consistently. Validate coordinator selection cannot be treated as a scoring reviewer and adjust affected fixtures or exports as needed.",
+            "status": "pending",
+            "testStrategy": "Run panel configuration and prompt tests, verify five scoring personas plus one non-scoring coordinator, and execute the relevant existing test suite for regressions."
+          }
+        ],
+        "owner": "P1-persona"
+      },
+      {
+        "id": 7,
+        "title": "Define the symmetric two-reviewer criterion assignment model",
+        "description": "Encode and document the adjustable 2:2 criterion-to-persona ownership mapping.",
+        "details": "Add a configurable mapping constant/model for primary and secondary reviewers: Problem & Wow = VC primary / IT creator secondary; AI Implementation = open-source developer primary / paper reviewer secondary; Completeness = staff engineer primary / open-source developer secondary; Operational Quality = paper reviewer primary / staff engineer secondary; Presentation & Collaboration = IT creator primary / VC secondary. Validate the coordinator is excluded. Provide a mapping table in documentation and ensure every criterion has exactly two reviewers and every scoring persona owns exactly two criteria. Pseudo-code: `assignments[criterion] = [{persona_id, role:'primary'}, {persona_id, role:'secondary'}]`.",
+        "testStrategy": "Unit-test exact default assignments, two reviewers per criterion, two assignments per scoring persona, no coordinator assignment, no unknown persona/criterion IDs, and configuration validation failures for malformed mappings.",
+        "priority": "high",
+        "dependencies": [
+          4,
+          6
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Identify canonical criterion and persona identifiers",
+            "description": "Confirm the stable IDs used by the official rubric, five scoring personas, and coordinator before adding assignment configuration.",
+            "dependencies": [],
+            "details": "Inspect scoring and persona definitions from prerequisite work, then document the exact criterion and persona IDs that the assignment model must reference. Explicitly identify the coordinator ID as non-scoring.",
+            "status": "pending",
+            "testStrategy": "Add or update a focused check that the selected IDs resolve to the canonical rubric and persona registries."
+          },
+          {
+            "id": 2,
+            "title": "Add configurable default reviewer assignment mapping",
+            "description": "Create the adjustable mapping constant or model representing primary and secondary reviewers for every criterion.",
+            "dependencies": [
+              1
+            ],
+            "details": "Encode assignments[criterion] as two role-tagged entries. Set Problem & Wow to VC/IT creator, AI Implementation to open-source developer/paper reviewer, Completeness to staff engineer/open-source developer, Operational Quality to paper reviewer/staff engineer, and Presentation & Collaboration to IT creator/VC, in primary/secondary order.",
+            "status": "pending",
+            "testStrategy": "Unit-test that the default mapping exactly matches all five required criterion-to-reviewer and role assignments."
+          },
+          {
+            "id": 3,
+            "title": "Implement assignment mapping validation rules",
+            "description": "Validate assignment configurations before they are used by scoring or review orchestration.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Implement validation for known criterion IDs, known scoring-persona IDs, valid primary and secondary roles, exactly two distinct reviewers per criterion, one primary and one secondary entry, exactly two owned criteria per scoring persona, and complete coordinator exclusion. Return actionable validation errors for malformed configurations.",
+            "status": "pending",
+            "testStrategy": "Test valid defaults plus failures for unknown IDs, missing criteria, duplicate reviewers, invalid roles, coordinator inclusion, incorrect reviewer counts, and unequal persona ownership."
+          },
+          {
+            "id": 4,
+            "title": "Expose validated assignments to review orchestration",
+            "description": "Connect the validated mapping to the code path that determines which personas review each criterion.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Replace any implicit, positional, or hard-coded criterion ownership lookup with the configurable assignment model. Ensure downstream consumers receive reviewer persona IDs together with primary or secondary roles and fail early when configuration validation does not pass.",
+            "status": "pending",
+            "testStrategy": "Use an integration-level test to verify each criterion resolves to its two configured reviewers and preserves primary versus secondary role metadata."
+          },
+          {
+            "id": 5,
+            "title": "Document the symmetric two-reviewer ownership table",
+            "description": "Publish clear documentation for the default mapping and its configuration invariants.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Add a documentation table listing all five criteria, primary reviewer, and secondary reviewer. Explain that the mapping is adjustable, every criterion requires exactly two reviewers, every scoring persona owns exactly two criteria, and the coordinator is excluded from criterion scoring assignments.",
+            "status": "pending",
+            "testStrategy": "Documentation review or automated content test verifies the five table rows, all ten role assignments, the 2:2 invariants, and the coordinator exclusion statement."
+          }
+        ],
+        "owner": "P2-debate"
+      },
+      {
+        "id": 8,
+        "title": "Implement evidence-aware independent first-round scoring",
+        "description": "Build stage 1 of the panel: each judge independently scores only assigned criteria and attaches concrete evidence and references.",
+        "details": "Refactor build_discussion and local_provisional panel flow to generate one first-round assessment per assigned persona/criterion pair (10 assessments by default). Each assessment contains criterion, reviewer, provisional score bounded by rubric maximum, rationale, evidence IDs, references, and evidence-sufficiency status. Create aligned local rule-board and OpenAI prompt variants. The local mode must be deterministic and require no external key. The OpenAI schema/request contract should demand structured output only. Pseudo-code: `for assignment in assignments: draft = score_assigned_criterion(persona, criterion, filtered_evidence); require(draft.evidence_ids or draft.insufficient_evidence)`. Do not let reviewers issue opinions for unassigned criteria.",
+        "testStrategy": "Fixture tests verify exactly ten first-round drafts, correct reviewer/criterion ownership, bounded scores, deterministic repeated local output, and evidence/reference presence or explicit insufficiency. Validate generated OpenAI prompt includes only the reviewer’s assigned criteria.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          6,
+          7
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Map first-round assessment contracts and assignment ownership",
+            "description": "Identify the current discussion flow, assignment model, rubric limits, and output contracts needed for independent first-round scoring.",
+            "dependencies": [],
+            "details": "Trace build_discussion and local_provisional call paths. Define or extend typed assessment structures with criterion, reviewer, score, rationale, evidence_ids, references, and insufficient_evidence. Add validation helpers that enforce reviewer-to-criterion ownership and canonical rubric score bounds.",
+            "status": "pending",
+            "testStrategy": "Unit-test contract validation for required fields, assigned ownership, bounded scores, and the rule that evidence IDs are required unless insufficiency is explicitly true."
+          },
+          {
+            "id": 2,
+            "title": "Implement deterministic local rule-board first-round scoring",
+            "description": "Create a key-free deterministic local scorer that produces one evidence-aware assessment for each assigned reviewer and criterion.",
+            "dependencies": [
+              1
+            ],
+            "details": "Refactor local_provisional to iterate assignments rather than asking each persona for broad opinions. Filter evidence to the assigned criterion, apply stable rule-board scoring against rubric maxima, generate reproducible rationale and references, and emit explicit insufficient-evidence status when no concrete evidence can support a draft.",
+            "status": "pending",
+            "testStrategy": "Use fixed fixtures to verify repeated local runs are byte-for-byte stable, scores remain within each criterion maximum, and every draft includes evidence/references or explicit insufficiency."
+          },
+          {
+            "id": 3,
+            "title": "Create structured OpenAI first-round prompt and response schema",
+            "description": "Add an OpenAI scoring variant that requests only one assigned criterion assessment and accepts structured output only.",
+            "dependencies": [
+              1
+            ],
+            "details": "Build prompt context from the configured persona, its assigned criterion, rubric maximum, and criterion-filtered evidence. Define a strict request/response schema for a single assessment, include evidence and reference requirements, prohibit opinions on unassigned criteria, and validate returned content through the shared assessment validator.",
+            "status": "pending",
+            "testStrategy": "Snapshot or inspect generated prompts to confirm they expose only the reviewer’s assigned criterion and assert schema validation rejects prose-only, unassigned, out-of-range, or unsupported responses."
+          },
+          {
+            "id": 4,
+            "title": "Refactor discussion assembly to emit all assigned first-round drafts",
+            "description": "Integrate local and OpenAI first-round scorers into build_discussion so each persona-criterion assignment creates an isolated draft.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Replace any aggregate or cross-criterion provisional behavior with an assignment loop. Dispatch each assignment to the selected provider, preserve criterion and reviewer identifiers, validate each result before inclusion, and ensure default panel configuration yields ten independent assessments without leaking other criterion judgments.",
+            "status": "pending",
+            "testStrategy": "Integration-test default assignments to assert exactly ten drafts, expected primary/secondary reviewer ownership for every criterion, no duplicate assignment pairs, and no reviewer opinions outside their assignment."
+          },
+          {
+            "id": 5,
+            "title": "Add end-to-end evidence-aware first-round regression coverage",
+            "description": "Establish fixture coverage for both providers and failure handling of the completed stage-one scoring flow.",
+            "dependencies": [
+              4
+            ],
+            "details": "Add representative evidence-rich and evidence-poor fixtures covering all criteria. Verify references resolve to supplied evidence where applicable, insufficiency is disclosed rather than fabricated, malformed provider responses are rejected or surfaced predictably, and the emitted first-round output remains compatible with downstream reconciliation consumers.",
+            "status": "pending",
+            "testStrategy": "Run end-to-end fixture tests for ten drafts, rubric-bounded scores, valid evidence/reference linkage or insufficiency, deterministic local behavior, and structured OpenAI contract enforcement."
+          }
+        ],
+        "owner": "P2-debate"
+      },
+      {
+        "id": 9,
+        "title": "Implement per-criterion reconciliation debate prompts and flow",
+        "description": "Build stage 2 discussion so the two assigned reviewers compare, challenge, and refine evidence-backed drafts in persona voice.",
+        "details": "For each criterion, pair the primary and secondary first-round drafts and create a reconciliation exchange containing comparison, challenge/rebuttal, accepted/rejected evidence, and a proposed resolution. Implement both deterministic local rule-board behavior and an OpenAI prompt/schema. Apply persona dialogue style only to wording. Require conflicts to cite evidence IDs/references and prohibit a change justified only by authority, personality, or a bare assertion. Add a 30-second timeline representation: stage 1 independent drafts, stage 2 paired reconciliation, stage 3 coordinator decision.",
+        "testStrategy": "Use divergent-score fixtures to assert five reconciliation threads, each with exactly the mapped reviewer pair and evidence-linked challenge/rebuttal. Test that unsupported proposed changes are rejected/flagged and that local output remains deterministic.",
+        "priority": "high",
+        "dependencies": [
+          8
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define reconciliation data models and stage-2 interfaces",
+            "description": "Create typed contracts for pairing first-round reviewer drafts and recording each per-criterion reconciliation exchange.",
+            "dependencies": [],
+            "details": "Add models for reviewer pairs, comparison summaries, challenges, rebuttals, accepted and rejected evidence, proposed resolutions, validation flags, and the three-stage timeline payload.",
+            "status": "pending",
+            "testStrategy": "Unit-test serialization, required fields, criterion/reviewer identity preservation, and validation of evidence-reference fields."
+          },
+          {
+            "id": 2,
+            "title": "Implement deterministic local reconciliation rule-board",
+            "description": "Build deterministic stage-2 reconciliation logic that compares paired drafts and produces evidence-governed debate records.",
+            "dependencies": [
+              1
+            ],
+            "details": "For every criterion, map its primary and secondary reviewers, compare scores and rationales, generate challenge and rebuttal entries, classify cited evidence, and produce a defensible proposed resolution. Reject or flag changes supported only by authority, persona, or bare assertion.",
+            "status": "pending",
+            "testStrategy": "Use divergent-score fixtures to verify mapped pairs, evidence-linked challenges and rebuttals, rejected unsupported changes, and identical output across repeated local runs."
+          },
+          {
+            "id": 3,
+            "title": "Create OpenAI reconciliation prompt and structured response schema",
+            "description": "Implement the remote stage-2 prompt contract and schema for evidence-backed reviewer reconciliation dialogues.",
+            "dependencies": [
+              1
+            ],
+            "details": "Construct prompts containing only the criterion, paired first-round drafts, allowed evidence, references, and reviewer context. Define a strict structured schema requiring comparison, challenge, rebuttal, accepted/rejected evidence, proposed resolution, and validation flags; prohibit unsupported authority-based revisions.",
+            "status": "pending",
+            "testStrategy": "Validate prompt content and schema requirements with unit tests, including assertions that evidence IDs are required for conflicts and prohibited justification rules are explicit."
+          },
+          {
+            "id": 4,
+            "title": "Integrate per-criterion stage-2 reconciliation flow",
+            "description": "Connect first-round assessments to local and OpenAI reconciliation execution for all assigned criterion pairs.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Extend the discussion orchestration to group stage-1 drafts by criterion, resolve the configured primary-secondary pair, select local or OpenAI execution, validate returned records, and expose one reconciliation thread per criterion without altering stage-1 ownership.",
+            "status": "pending",
+            "testStrategy": "Integration-test five reconciliation threads from ten default first-round drafts, each containing exactly its assigned reviewer pair and a complete reconciliation record."
+          },
+          {
+            "id": 5,
+            "title": "Add persona wording controls and three-stage timeline output",
+            "description": "Ensure persona voice affects only dialogue wording and publish the required 30-second process timeline representation.",
+            "dependencies": [
+              4
+            ],
+            "details": "Apply persona tone guidance solely when rendering challenge and rebuttal language, while retaining evidence-based decision logic. Add a timeline model or UI-ready payload showing stage 1 independent drafts, stage 2 paired reconciliation, and stage 3 coordinator decision, including approximately 30-second sequencing metadata.",
+            "status": "pending",
+            "testStrategy": "Assert persona variations do not change equivalent local resolution outcomes, verify personality-only changes are flagged, and snapshot-test the complete three-stage timeline representation."
+          }
+        ],
+        "owner": "P2-debate"
+      },
+      {
+        "id": 10,
+        "title": "Implement coordinator final score decision with evidence consistency controls",
+        "description": "Add the non-scoring coordinator that finalizes each criterion from the two reviewer drafts and reconciliation record without unsupported score changes.",
+        "details": "Implement a separate coordinator finalization function/prompt for all five criteria. It should inspect assigned evidence, both first-round positions, and reconciliation notes; then emit final score, concise reason, supporting evidence IDs/references, and a decision trace. A final score that differs from supported reviewer positions must cite newly accepted or reweighted existing evidence; otherwise retain/derive a defensible evidence-backed score and flag insufficient evidence when needed. Pseudo-code: `final = decide(criterion, drafts, debate, evidence); assert final.references; assert adjustment_supported(final, drafts, debate, evidence)`. The coordinator does not impersonate a scoring persona and does not introduce unsupported facts.",
+        "testStrategy": "Test bounded final scores, one final decision per criterion, references on every final decision, and traceability to drafts/debate. Include cases where an unsupported coordinator adjustment is rejected and where insufficient evidence is disclosed.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          8,
+          9
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define coordinator decision contract and validation schema",
+            "description": "Create explicit data contracts for one coordinator final decision per rubric criterion.",
+            "dependencies": [],
+            "details": "Define typed models or JSON schemas for final score, concise reason, evidence IDs, references, decision trace, evidence sufficiency, and adjustment-support metadata. Encode score bounds from the canonical rubric and require all five criteria.",
+            "status": "pending",
+            "testStrategy": "Unit-test valid and invalid payloads, including missing references, duplicate criteria, out-of-range scores, and incomplete traces."
+          },
+          {
+            "id": 2,
+            "title": "Build evidence and position provenance evaluation helpers",
+            "description": "Implement deterministic helpers that determine whether a proposed final score is supported by inputs.",
+            "dependencies": [
+              1
+            ],
+            "details": "Add utilities to resolve evidence IDs against assigned evidence, compare final scores with reviewer positions, inspect reconciliation accepted or reweighted evidence, and classify score adjustments as supported, unsupported, or insufficiently evidenced.",
+            "status": "pending",
+            "testStrategy": "Use focused fixtures for matching positions, evidence-backed deviations, invalid evidence references, unsupported changes, and insufficient-evidence outcomes."
+          },
+          {
+            "id": 3,
+            "title": "Implement deterministic coordinator finalization flow",
+            "description": "Add local coordinator logic to finalize all five criteria from drafts, debate, and evidence.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Implement a separate non-persona coordinator function that groups inputs by criterion, derives a defensible bounded score, emits required provenance fields, retains supported positions when no valid adjustment exists, and flags insufficient evidence rather than inventing facts.",
+            "status": "pending",
+            "testStrategy": "Run deterministic fixture tests for five finalized decisions, repeatable local output, required references, bounded scores, and fallback behavior on disputed or sparse evidence."
+          },
+          {
+            "id": 4,
+            "title": "Create coordinator prompt and OpenAI response integration",
+            "description": "Implement the external-model coordinator prompt, schema, and response validation path.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Build a coordinator-specific prompt containing only assigned evidence, two reviewer drafts, and reconciliation notes for each criterion. State that it is non-scoring in persona terms, prohibit unsupported facts and adjustments, require decision traces, parse structured output, and validate it through provenance controls.",
+            "status": "pending",
+            "testStrategy": "Assert prompt contents and instructions, validate mocked model responses, and verify malformed, unsupported, or unreferenced outputs are rejected or normalized safely."
+          },
+          {
+            "id": 5,
+            "title": "Integrate final decisions into panel output and end-to-end tests",
+            "description": "Wire coordinator outputs into the panel result and verify full traceability across stages.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Replace provisional or debate-only downstream final values with coordinator decisions while preserving links to assigned evidence, reviewer drafts, and reconciliation records. Expose evidence-insufficiency flags and decision traces to report consumers without presenting the coordinator as a scoring persona.",
+            "status": "pending",
+            "testStrategy": "Add end-to-end fixtures covering all five criteria, exact decision count, draft/debate traceability, rejected unsupported adjustments, disclosed insufficient evidence, and compatible report-facing output."
+          }
+        ],
+        "owner": "P3-core"
+      },
+      {
+        "id": 11,
+        "title": "Expand dialogue-quality rules and provide replayable discussion examples",
+        "description": "Document dialogue constraints and add one or two sample submission replays that demonstrate the complete staged conversation.",
+        "details": "Extend docs/dialogue-quality.md with allowed persona-tone guidance, conflict/rebuttal patterns, required evidence citation format, assignment limits, coordinator neutrality, and prohibited behaviors such as unsupported score changes or imitation of real people. Add one or two replayable sample discussions based on examples/submissions artifacts, covering independent scoring, paired adjustment, and coordinator finalization. Include the 30-second stage timeline and document that examples are grounded in supplied analysis/browser artifacts, not executed repository code.",
+        "testStrategy": "Validate sample conversation files parse against the discussion schema, cover all three stages, contain assigned reviewers only, and include evidence references for final scores. Perform documentation checks for required dialogue rules and prohibited-behavior statements.",
+        "priority": "medium",
+        "dependencies": [
+          7,
+          8,
+          9,
+          10
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Audit existing dialogue docs, schemas, and submission artifacts",
+            "description": "Identify the current dialogue documentation, discussion schema, and available example submission artifacts to define the replay format and source material.",
+            "dependencies": [],
+            "details": "Review docs/dialogue-quality.md, discussion-related schemas, and examples/submissions artifacts. Record existing stage names, reviewer assignment fields, evidence-reference fields, and reusable fixture inputs without executing repository code.",
+            "status": "pending",
+            "testStrategy": "Confirm the selected artifacts and schema fields support a complete three-stage replay with traceable evidence references."
+          },
+          {
+            "id": 2,
+            "title": "Define comprehensive dialogue-quality constraints and prohibitions",
+            "description": "Expand the dialogue rules with persona tone, rebuttal, evidence, assignment, neutrality, and prohibited-behavior requirements.",
+            "dependencies": [
+              1
+            ],
+            "details": "Update docs/dialogue-quality.md with allowed persona-tone guidance, constructive conflict and rebuttal patterns, mandatory evidence citation syntax, reviewer assignment limits, coordinator neutrality rules, and explicit bans on unsupported score changes and imitation of real people.",
+            "status": "pending",
+            "testStrategy": "Review the documentation against a requirements checklist covering every requested rule category and each prohibited behavior."
+          },
+          {
+            "id": 3,
+            "title": "Document staged timing and replay protocol",
+            "description": "Specify how replayable discussions progress through the timed independent, paired, and coordinator stages.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Add a clear 30-second stage timeline to the dialogue documentation. Define the expected message order, permitted participants, score-change conditions, evidence citation requirements, and finalization record needed for deterministic replay.",
+            "status": "pending",
+            "testStrategy": "Verify the documented protocol explicitly covers independent scoring, paired adjustment, coordinator finalization, timing, assignments, and evidence-backed final scores."
+          },
+          {
+            "id": 4,
+            "title": "Create evidence-grounded sample discussion replay fixtures",
+            "description": "Add one or two sample submission discussions demonstrating the complete staged conversation from supplied artifacts.",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "Create replayable example discussion files based only on supplied analysis/browser and examples/submissions artifacts. Include assigned reviewers' independent scores, an evidence-cited paired adjustment or rebuttal, and coordinator finalization without unsupported score modifications.",
+            "status": "pending",
+            "testStrategy": "Validate each sample file parses against the discussion schema, uses only assigned reviewers, references available artifacts, and contains all three required stages."
+          },
+          {
+            "id": 5,
+            "title": "Cross-link examples and validate documentation completeness",
+            "description": "Connect the new replay fixtures to the dialogue guide and perform final rule and fixture validation.",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Link the sample replay files from docs/dialogue-quality.md and state clearly that examples are grounded in supplied analysis/browser artifacts rather than executed repository code. Check consistency between documented citation rules, stage timeline, and fixture contents.",
+            "status": "pending",
+            "testStrategy": "Run schema validation for replay fixtures and documentation checks asserting required rules, timeline, source-grounding disclaimer, prohibited-behavior statements, and evidence references for final scores."
+          }
+        ],
+        "owner": "P2-debate"
+      },
+      {
+        "id": 12,
+        "title": "Create automated evidence integrity validation",
+        "description": "Implement the checklist function/script that detects missing, duplicate, mismatched, and insufficient score evidence.",
+        "details": "Create an evidence-validation module or script that consumes normalized evidence, drafts, debate, and final decisions. Checks must include: every score has evidence/references; reference IDs resolve to actual static-analysis or browser-run artifacts; evidence is compatible with the scored criterion; the same evidence is not reused across criteria unless explicitly permitted by a documented exception; final rationale is logically traceable to reviewer/coordinator records; and insufficient evidence is explicitly labeled. Return structured findings suitable for tests and reports. Pseudo-code: `for decision in finals: check_refs(); check_source(); check_criterion_match(); check_cross_criterion_duplicate(); check_traceability()`.",
+        "testStrategy": "Create fixtures for valid results and each failure type: absent references, dangling references, invalid source, duplicated evidence across criteria, final-score/rationale mismatch, and explicit insufficient-evidence pass case. Assert deterministic structured findings.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          8,
+          10
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define evidence validation input contracts and finding schema",
+            "description": "Specify the normalized evidence, reviewer draft, debate, final decision, exception, and structured finding interfaces consumed and emitted by the validator.",
+            "dependencies": [],
+            "details": "Document or implement typed schemas with stable IDs, criterion IDs, source types, references, rationale links, insufficiency labels, and severity/code fields for deterministic reporting.",
+            "status": "pending",
+            "testStrategy": "Add schema-level tests covering valid objects and malformed or missing required validation fields."
+          },
+          {
+            "id": 2,
+            "title": "Implement reference presence and artifact resolution checks",
+            "description": "Build validation checks that ensure every final score provides evidence references and every reference resolves to a known eligible analysis artifact.",
+            "dependencies": [
+              1
+            ],
+            "details": "Index normalized static-analysis and browser-run artifacts by stable ID, then emit structured findings for absent references, dangling IDs, unsupported source types, and unavailable artifact metadata.",
+            "status": "pending",
+            "testStrategy": "Use fixtures for valid references, missing references, dangling IDs, and references targeting invalid artifact source types."
+          },
+          {
+            "id": 3,
+            "title": "Implement criterion compatibility and duplicate evidence checks",
+            "description": "Validate that referenced evidence supports its assigned criterion and is not reused across different criteria without an explicit documented exception.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Compare evidence criterion applicability metadata against each final decision, track cross-criterion reference usage, and honor exception records that include an approved reason and affected criteria.",
+            "status": "pending",
+            "testStrategy": "Test compatible and mismatched criterion evidence, prohibited cross-criterion reuse, same-criterion reuse, and correctly documented duplicate-use exceptions."
+          },
+          {
+            "id": 4,
+            "title": "Implement final rationale traceability and insufficiency validation",
+            "description": "Verify that final rationales and scores are traceable to reviewer drafts and reconciliation records, and that inadequate evidence is explicitly disclosed.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Resolve final decision trace links to draft and debate records, check score/rationale consistency against referenced support, and require a normalized insufficient-evidence label when available evidence cannot support the decision.",
+            "status": "pending",
+            "testStrategy": "Create fixtures for traceable decisions, missing draft or debate links, unsupported rationale or score changes, and valid explicit insufficient-evidence outcomes."
+          },
+          {
+            "id": 5,
+            "title": "Compose validator API and add deterministic report test suite",
+            "description": "Expose a checklist function or script that runs all integrity checks and returns report-ready structured findings in stable order.",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Implement the orchestration entry point for normalized evidence, drafts, debates, finals, and exceptions; aggregate findings with deterministic sorting, summary counts, and machine-readable result fields.",
+            "status": "pending",
+            "testStrategy": "Run end-to-end fixtures for a clean result and every required failure type, asserting finding codes, locations, summaries, deterministic ordering, and report serialization."
+          }
+        ],
+        "owner": "P5-qa"
+      },
+      {
+        "id": 13,
+        "title": "Redesign report evidence presentation and readability",
+        "description": "Improve report.html so criterion scores, evidence, reviewer positions, coordinator rationale, and evidence gaps are quickly understandable.",
+        "details": "Update report.py/template output to render a criterion-by-criterion score summary with score/max, final rationale, linked evidence/references, participating primary/secondary reviewers, and an evidence-insufficient indicator where applicable. Add a readable lower report section that summarizes panel disagreement/reconciliation and coordinator decision without overwhelming the reader. Use semantic HTML, clear heading hierarchy, compact evidence cards or lists, stable reference anchors, and visual distinction between evidence, opinion, and final decision. Render validation findings or an evidence-quality summary where appropriate; never hide missing-evidence conditions.",
+        "testStrategy": "Generate reports from complete, conflicting, and insufficient-evidence fixtures. Assert semantic sections, all five criterion labels/maxima, score-to-evidence links, reviewer/coordinator trace, clear missing-evidence disclosure, and valid expected HTML structure.",
+        "priority": "high",
+        "dependencies": [
+          3,
+          10,
+          12
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Inspect report data contracts and existing template structure",
+            "description": "Map the report generation flow and identify all available score, evidence, reviewer, reconciliation, coordinator, and validation fields.",
+            "dependencies": [],
+            "details": "Review report.py, report.html, related models, and fixtures to document current context keys and identify any missing presentation-ready fields.",
+            "status": "pending",
+            "testStrategy": "Create a field-mapping checklist against complete, conflicting, and insufficient-evidence fixtures."
+          },
+          {
+            "id": 2,
+            "title": "Build criterion-level report view models with evidence status",
+            "description": "Prepare normalized template data for each official criterion, including score, maximum, rationale, reviewers, references, and gaps.",
+            "dependencies": [
+              1
+            ],
+            "details": "Update report.py to produce ordered criterion view models with display labels, score/max, final rationale, primary and secondary reviewer positions, coordinator rationale, linked evidence IDs, and an explicit evidence-insufficient state. Preserve missing evidence rather than substituting unsupported claims.",
+            "status": "pending",
+            "testStrategy": "Unit test view-model generation for five criteria, score maxima, reviewer attribution, stable reference IDs, and explicit insufficient-evidence output."
+          },
+          {
+            "id": 3,
+            "title": "Redesign the criterion score and evidence report section",
+            "description": "Implement semantic, scannable HTML for criterion-by-criterion scores, evidence cards, reviewer views, and final decisions.",
+            "dependencies": [
+              2
+            ],
+            "details": "Revise report.html with a heading hierarchy, score summary elements, per-criterion semantic sections, compact evidence/reference lists, stable HTML anchors, and visually differentiated evidence, reviewer opinion, and final coordinator decision blocks. Ensure references link from criterion cards to their detailed anchors.",
+            "status": "pending",
+            "testStrategy": "Render representative reports and assert semantic sections, five criterion labels, score/max display, evidence links, reviewer traces, and valid anchor targets."
+          },
+          {
+            "id": 4,
+            "title": "Add concise reconciliation and evidence-quality summary sections",
+            "description": "Present disagreement, reconciliation, coordinator decisions, validation findings, and evidence gaps in a readable lower report area.",
+            "dependencies": [
+              2
+            ],
+            "details": "Add a lower semantic report section summarizing panel disagreement and resolution without duplicating every opinion. Include coordinator decision rationale, validation findings or evidence-quality summary, and prominent unresolved or insufficient-evidence disclosures. Use concise lists, callouts, and status labels to prevent reader overload.",
+            "status": "pending",
+            "testStrategy": "Use conflicting and missing-evidence fixtures to verify reconciliation summaries, coordinator rationale, validation output, and visible gap disclosures."
+          },
+          {
+            "id": 5,
+            "title": "Add report HTML regression coverage and accessibility checks",
+            "description": "Validate generated report readability contracts across complete, conflicting, and evidence-insufficient inputs.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Extend report-focused tests to generate HTML from representative fixtures and assert expected semantic landmarks, heading order, official criterion score/max values, reference-anchor integrity, reviewer/coordinator attribution, visual-state class hooks, and non-hidden missing-evidence conditions.",
+            "status": "pending",
+            "testStrategy": "Run the report test suite and parse generated HTML to verify required elements, unique stable IDs, working fragment links, and explicit evidence-gap messaging."
+          }
+        ],
+        "owner": "P4-report"
+      },
+      {
+        "id": 14,
+        "title": "Apply persona introduction cards and updated badges to the leaderboard",
+        "description": "Update leaderboard HTML to show the five fictional judge cards with profile images and official-rubric-aware status messaging.",
+        "details": "Update leaderboard.py/templates to render introduction cards from PERSONAS/configuration, including image, alt text, fictional role, specialty, and concise responsibility. Use the new profile asset paths with graceful fallback. Update badges and score-related copy to align with the new criterion names and weights. Keep presentation data-driven and avoid embedding duplicated persona/rubric text in templates.",
+        "testStrategy": "Render leaderboard fixture and assert five unique persona cards, valid image/alt attributes, correct role text, expected rubric-aware badges, and no stale labels. Test missing image fallback behavior.",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          5,
+          6
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Inspect leaderboard data flow and define presentation view model",
+            "description": "Identify leaderboard.py, its templates, and existing score/badge rendering paths, then define a single data-driven view model for personas and rubric metadata.",
+            "dependencies": [],
+            "details": "Trace how PERSONAS, profile assets, rubric definitions, scores, and status labels reach the leaderboard template. Define template-ready fields without duplicating persona or criterion text in HTML.",
+            "status": "pending",
+            "testStrategy": "Review rendered fixture inputs and verify the proposed view model can supply all card and badge fields."
+          },
+          {
+            "id": 2,
+            "title": "Build persona card data from PERSONAS configuration",
+            "description": "Update leaderboard rendering code to construct five introduction-card records from the canonical persona configuration and asset mapping.",
+            "dependencies": [
+              1
+            ],
+            "details": "For each configured persona, expose display name, fictional role, specialty, concise responsibility, profile image URL, descriptive alt text, and fallback metadata. Preserve configuration order and avoid hard-coded persona prose.",
+            "status": "pending",
+            "testStrategy": "Unit test that the generated card collection contains exactly five unique configured personas with required non-empty display fields."
+          },
+          {
+            "id": 3,
+            "title": "Render accessible persona introduction cards in leaderboard HTML",
+            "description": "Add responsive leaderboard template markup and styling for the five fictional judge introduction cards using only the supplied view-model fields.",
+            "dependencies": [
+              2
+            ],
+            "details": "Render card image, alt attribute, persona name, fictional role, specialty, and responsibility. Use semantic structure and CSS classes consistent with existing leaderboard styles; do not embed duplicated persona descriptions in the template.",
+            "status": "pending",
+            "testStrategy": "Render an HTML fixture and assert five unique cards, required role and specialty text, image elements, and non-empty alt attributes."
+          },
+          {
+            "id": 4,
+            "title": "Add resilient profile image fallback behavior",
+            "description": "Implement graceful handling for unavailable persona profile assets so leaderboard cards retain a neutral, accessible visual fallback.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Use the stable profile asset paths supplied by the persona asset configuration. Add an image error handler, fallback source or placeholder state, and accessible fallback labeling without depending on remote image URLs.",
+            "status": "pending",
+            "testStrategy": "Render or browser-test a deliberately missing asset and verify fallback image or placeholder styling activates while card text and accessibility attributes remain available."
+          },
+          {
+            "id": 5,
+            "title": "Generate rubric-aware badges and regression tests",
+            "description": "Replace stale leaderboard score labels and badges with presentation data derived from the canonical official rubric names, weights, and scoring status.",
+            "dependencies": [
+              1,
+              3,
+              4
+            ],
+            "details": "Build badge and score-copy fields from rubric configuration, including current criterion display labels and maximum weights. Remove obsolete terminology, especially former criterion labels, and add rendering tests for cards, badges, and fallback behavior.",
+            "status": "pending",
+            "testStrategy": "Assert rendered leaderboard badges match all official criterion names and weights, stale labels are absent, five cards are present, and missing-image fallback behavior is covered."
+          }
+        ],
+        "owner": "P4-report"
+      },
+      {
+        "id": 15,
+        "title": "Run sample-submission report validation and document findings",
+        "description": "Generate reports for existing examples/submissions and record evidence clarity, grounding, score logic, duplication, and readability findings with improvements applied.",
+        "details": "Use existing examples/submissions and their permitted static-analysis/browser execution artifacts to run the complete scoring/report path without executing repository code. Produce sample reports and a validation document per sample or consolidated report that evaluates: score-specific evidence clarity, grounding in actual artifacts, panel-to-final-score logic, cross-criterion evidence duplication, disclosure of evidence gaps, and lower-report readability. Feed detected issues into direct report/prompt/validation corrections within the defined scope, and retain before/after examples where practical.",
+        "testStrategy": "Verify each selected sample has a generated report and documented validation findings. Run the integrity validator against every sample, assert identified failures are visible rather than silently ignored, and manually review the rendered report’s lower section against the stated readability checklist.",
+        "priority": "high",
+        "dependencies": [
+          11,
+          12,
+          13,
+          14
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Inventory eligible samples and permitted analysis artifacts",
+            "description": "Select representative existing examples or submissions and catalog the static-analysis and browser artifacts available for each sample.",
+            "dependencies": [],
+            "details": "Create a sample manifest covering complete, conflicting, and evidence-sparse cases where available. Record stable sample IDs, artifact paths, artifact types, provenance, and any unavailable evidence; explicitly exclude repository-code execution.",
+            "status": "pending",
+            "testStrategy": "Review the manifest to confirm every selected sample has only permitted input artifacts and includes coverage for key evidence conditions."
+          },
+          {
+            "id": 2,
+            "title": "Generate baseline reports through the non-executing scoring path",
+            "description": "Run the complete scoring and report-generation path for every selected sample using only the cataloged permitted artifacts.",
+            "dependencies": [
+              1
+            ],
+            "details": "Produce versioned baseline HTML and/or structured report outputs, including normalized evidence, reviewer positions, reconciliation data, coordinator decisions, criterion scores, and final scores. Preserve inputs and report-generation configuration needed to reproduce each result without executing submission code.",
+            "status": "pending",
+            "testStrategy": "Assert that every manifest sample has a generated baseline report, all five criteria are represented, and no report-generation step invokes repository source execution."
+          },
+          {
+            "id": 3,
+            "title": "Validate report evidence, score logic, and readability findings",
+            "description": "Evaluate each baseline report against the required evidence-grounding, scoring, duplication, gap-disclosure, and readability checks.",
+            "dependencies": [
+              2
+            ],
+            "details": "Create a consolidated validation document or per-sample records that trace each criterion score to actual artifact references, verify panel-to-final-score rationale, identify cross-criterion evidence reuse, flag unsupported claims, assess explicit insufficient-evidence disclosures, and manually inspect lower report sections for hierarchy and scanability.",
+            "status": "pending",
+            "testStrategy": "Use a validation checklist to verify every sample records findings for all required categories and that known missing or conflicting evidence is visible rather than silently ignored."
+          },
+          {
+            "id": 4,
+            "title": "Apply scoped corrections from validation findings",
+            "description": "Translate confirmed report-validation issues into direct report, prompt, or validation-rule corrections within the defined project scope.",
+            "dependencies": [
+              3
+            ],
+            "details": "Prioritize fixes for ungrounded score claims, unclear reviewer-to-coordinator transitions, misleading duplicated evidence, missing evidence-gap labels, and unreadable lower sections. Update the relevant templates, report logic, prompt/schema text, or integrity validation checks while retaining a change log linked to each finding.",
+            "status": "pending",
+            "testStrategy": "Add or update focused fixture tests for each corrected issue, including evidence-reference visibility, unsupported-score detection, duplication handling, and lower-section HTML/readability contracts."
+          },
+          {
+            "id": 5,
+            "title": "Regenerate reports and publish before-after validation evidence",
+            "description": "Re-run selected samples after corrections and document resolved, remaining, and intentionally accepted findings with before-after examples.",
+            "dependencies": [
+              4
+            ],
+            "details": "Generate final reports using the same preserved artifact inputs, compare them with baseline outputs, and update the validation document with correction status and links to before/after excerpts. Retain unresolved limitations and evidence gaps explicitly, and ensure all final artifacts are reproducible from permitted static/browser inputs.",
+            "status": "pending",
+            "testStrategy": "Verify each selected sample has a final report and documented outcome, run the evidence-integrity validator across all final reports, and manually confirm lower report sections meet the stated readability checks."
+          }
+        ],
+        "owner": "P5-qa"
+      },
+      {
+        "id": 16,
+        "title": "Execute end-to-end regression and smoke coverage for local provisional mode",
+        "description": "Validate the full persona-to-report workflow, including deterministic offline operation and required HTML/test contracts.",
+        "details": "Add or update test_smoke.py and related tests to cover the integrated path: normalized signals -> assigned first-round opinions -> paired reconciliation -> coordinator decisions -> evidence integrity checks -> HTML report and leaderboard rendering. Include persona/profile expectations and the official rubric. Ensure `local_provisional` uses no external key/network dependency and returns identical output for the same fixture. Exercise OpenAI prompt construction through mocks/schema tests only, not live calls. Run the required command `python -m pytest test_smoke.py` as the acceptance smoke suite.",
+        "testStrategy": "Pass `python -m pytest test_smoke.py` with HTML structure assertions. Add regression tests for deterministic repeated local_provisional runs, no external-key requirement, all final scores having evidence/references or explicit insufficiency, no unsupported coordinator adjustment, and complete five-criterion report output.",
+        "priority": "high",
+        "dependencies": [
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Map existing smoke coverage and define integrated fixture contracts",
+            "description": "Inspect the current smoke tests, fixtures, pipeline APIs, and report contracts to define the exact end-to-end assertions required for local provisional mode.",
+            "dependencies": [],
+            "details": "Identify stable fixture inputs and expected outputs spanning normalized signals, five assigned personas, first-round opinions, reconciliation pairs, coordinator decisions, evidence validation, HTML sections, and leaderboard data.",
+            "status": "pending",
+            "testStrategy": "Document the fixture schema and assertion matrix, confirming every official rubric criterion and persona/profile contract has a corresponding smoke assertion."
+          },
+          {
+            "id": 2,
+            "title": "Add offline deterministic local_provisional pipeline regression tests",
+            "description": "Create regression tests that execute the full local provisional workflow repeatedly without credentials, network access, or live provider calls.",
+            "dependencies": [
+              1
+            ],
+            "details": "Run the same normalized fixture through local_provisional at least twice and compare canonicalized outputs for equality. Patch environment variables and network/client entry points to prove no external key is required and no outbound request can occur.",
+            "status": "pending",
+            "testStrategy": "Assert repeated runs produce byte-equivalent or canonical-equivalent decisions, scores, evidence references, and report payloads; fail the test if network or OpenAI client paths are invoked."
+          },
+          {
+            "id": 3,
+            "title": "Assert persona opinions reconciliation and coordinator integrity",
+            "description": "Test the decision-making stages from criterion-assigned first-round opinions through paired reconciliation and final coordinator outcomes.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Verify all five expected persona profiles appear with their assigned primary criteria and official rubric definitions. Assert required reconciliation pairs are represented, coordinator rationale is grounded in supplied evidence, and adjustments never exceed or contradict supported panel evidence.",
+            "status": "pending",
+            "testStrategy": "Use fixture assertions for complete five-persona participation, pair records, criterion caps, explicit insufficiency where evidence is missing, and rejection of unsupported coordinator score adjustments."
+          },
+          {
+            "id": 4,
+            "title": "Validate evidence completeness and rendered HTML leaderboard contracts",
+            "description": "Add report-level tests for evidence integrity, required HTML structure, score presentation, and leaderboard rendering from the integrated local result.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Assert every final criterion score includes valid evidence references or an explicit insufficiency disclosure. Parse generated HTML and verify required report sections, official rubric labels, persona/profile output, reconciliations, coordinator decisions, evidence links, totals, and leaderboard rows.",
+            "status": "pending",
+            "testStrategy": "Use an HTML parser or stable DOM assertions to verify required IDs/classes/text and leaderboard ordering; add negative fixtures that demonstrate missing evidence and invalid references remain visibly disclosed."
+          },
+          {
+            "id": 5,
+            "title": "Mock OpenAI prompt schemas and finalize acceptance smoke suite",
+            "description": "Cover OpenAI prompt construction exclusively with mocks and schema-level assertions, then consolidate the complete acceptance path in test_smoke.py.",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Mock provider clients and inspect constructed messages, structured-output schemas, and response parsing without making live calls. Update test_smoke.py to invoke the full offline persona-to-report path and keep related focused regression tests in appropriate modules.",
+            "status": "pending",
+            "testStrategy": "Run `python -m pytest test_smoke.py` successfully as the required acceptance suite; separately assert mocked OpenAI prompt payloads match expected schema and verify no live credentials or network access are used."
+          }
+        ],
+        "owner": "P5-qa"
+      }
+    ],
+    "metadata": {
+      "created": "2026-07-15T01:11:17.611Z",
+      "updated": "2026-07-15T01:11:17.611Z",
+      "description": "Tasks for master context"
+    }
+  }
+}
