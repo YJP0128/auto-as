@@ -798,7 +798,7 @@
           "9",
           "10"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -806,9 +806,10 @@
             "description": "Identify the current dialogue documentation, discussion schema, and available example submission artifacts to define the replay format and source material.",
             "dependencies": [],
             "details": "Review docs/dialogue-quality.md, discussion-related schemas, and examples/submissions artifacts. Record existing stage names, reviewer assignment fields, evidence-reference fields, and reusable fixture inputs without executing repository code.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Confirm the selected artifacts and schema fields support a complete three-stage replay with traceable evidence references.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-07-15T07:40:57.299Z"
           },
           {
             "id": 2,
@@ -818,9 +819,10 @@
               1
             ],
             "details": "Update docs/dialogue-quality.md with allowed persona-tone guidance, constructive conflict and rebuttal patterns, mandatory evidence citation syntax, reviewer assignment limits, coordinator neutrality rules, and explicit bans on unsupported score changes and imitation of real people.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Review the documentation against a requirements checklist covering every requested rule category and each prohibited behavior.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-07-15T07:40:57.308Z"
           },
           {
             "id": 3,
@@ -831,9 +833,10 @@
               2
             ],
             "details": "Add a clear 30-second stage timeline to the dialogue documentation. Define the expected message order, permitted participants, score-change conditions, evidence citation requirements, and finalization record needed for deterministic replay.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify the documented protocol explicitly covers independent scoring, paired adjustment, coordinator finalization, timing, assignments, and evidence-backed final scores.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-07-15T07:40:57.316Z"
           },
           {
             "id": 4,
@@ -844,9 +847,10 @@
               3
             ],
             "details": "Create replayable example discussion files based only on supplied analysis/browser and examples/submissions artifacts. Include assigned reviewers' independent scores, an evidence-cited paired adjustment or rebuttal, and coordinator finalization without unsupported score modifications.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Validate each sample file parses against the discussion schema, uses only assigned reviewers, references available artifacts, and contains all three required stages.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-07-15T07:40:57.325Z"
           },
           {
             "id": 5,
@@ -858,12 +862,14 @@
               4
             ],
             "details": "Link the sample replay files from docs/dialogue-quality.md and state clearly that examples are grounded in supplied analysis/browser artifacts rather than executed repository code. Check consistency between documented citation rules, stage timeline, and fixture contents.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Run schema validation for replay fixtures and documentation checks asserting required rules, timeline, source-grounding disclaimer, prohibited-behavior statements, and evidence references for final scores.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-07-15T07:40:57.332Z"
           }
         ],
-        "owner": "P2-debate"
+        "owner": "P2-debate",
+        "updatedAt": "2026-07-15T07:40:57.332Z"
       },
       {
         "id": "12",
@@ -1259,9 +1265,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-07-15T07:09:22.650Z",
+      "lastModified": "2026-07-15T07:40:57.332Z",
       "taskCount": 16,
-      "completedCount": 9,
+      "completedCount": 10,
       "tags": [
         "master"
       ]

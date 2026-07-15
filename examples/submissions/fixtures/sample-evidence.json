@@ -1,0 +1,31 @@
+{
+  "submission": {
+    "scenario": "받는 사람 입력란에 민수를 입력하고 추천 버튼을 클릭한다",
+    "demo_url": "https://demo.example.com",
+    "repo_url": "https://github.com/team/reco"
+  },
+  "static_analysis": {
+    "categories": {"tools": true, "rag": true, "agent_orchestration": true, "golden_dataset": true, "eval_metric": true},
+    "matches": {
+      "tools": [{"file": "api/recommend.py", "line": "42", "text": "web_search(query)"}],
+      "rag": [{"file": "api/retrieve.py", "line": "18", "text": "vectorstore.similarity_search(q)"}],
+      "agent_orchestration": [{"file": "api/agent.py", "line": "7", "text": "workflow.run(state)"}],
+      "golden_dataset": [{"file": "eval/golden_set.jsonl", "line": "1", "text": "{'input':..., 'expected':...}"}],
+      "eval_metric": [{"file": "eval/run_eval.py", "line": "30", "text": "accuracy = correct/total"}]
+    }
+  },
+  "git_analysis": {
+    "available": true,
+    "commit_count": 24,
+    "authors": {"minsu <a@x.com>": 8, "jiwon <b@x.com>": 9, "hana <c@x.com>": 7},
+    "timestamps": ["2026-07-10T09:00:00", "2026-07-12T22:00:00"]
+  },
+  "browser": {
+    "available": true,
+    "steps": [
+      {"step": 1, "text": "받는 사람 입력", "action": "fill", "status": "success"},
+      {"step": 2, "text": "추천 버튼 클릭", "action": "click", "status": "success"}
+    ],
+    "console_errors": []
+  }
+}
