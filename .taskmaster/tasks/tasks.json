@@ -395,7 +395,7 @@
           "2",
           "4"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -403,7 +403,7 @@
             "description": "Inspect panel.py and related scoring flow to identify existing persona definitions, ad hoc prompt text, and coordinator behavior that must be replaced.",
             "dependencies": [],
             "details": "Map all PERSONAS consumers, prompt builders, scoring entry points, serialization paths, and any assumptions about persona count or role names before changing configuration.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Document affected call sites and run existing panel tests to establish baseline behavior.",
             "parentId": "undefined"
           },
@@ -415,7 +415,7 @@
               1
             ],
             "details": "Add stable IDs, display names, roles, specialties, primary criteria, tone guidance, preferences, critique guidance, and profile-image references for every persona. Keep the coordinator outside PERSONAS or set is_scoring_persona to false.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Add configuration tests asserting exactly five scoring personas, one coordinator, required fields, unique stable IDs, and valid primary-role assignments.",
             "parentId": "undefined"
           },
@@ -427,7 +427,7 @@
               2
             ],
             "details": "Generate structured context containing identity, assigned role and criterion, specialty, preferences, critique approach, profile reference where applicable, and wording-only tone instructions. Ensure callers no longer construct persona text manually.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit test generated contexts for each persona, verifying all required configuration fields are represented and legacy ad hoc text is absent.",
             "parentId": "undefined"
           },
@@ -439,7 +439,7 @@
               3
             ],
             "details": "Add shared scoring constraints to all relevant prompt templates: rubric scores cannot change due to personality, authority, or tone; each rationale and score claim requires concrete evidence IDs or references; unsupported evidence must be disclosed.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Assert generated scoring prompts explicitly prohibit personality-only score adjustments and require evidence/references for every scored claim.",
             "parentId": "undefined"
           },
@@ -453,7 +453,7 @@
               4
             ],
             "details": "Update panel prompt assembly and persona lookup paths to use the new configuration consistently. Validate coordinator selection cannot be treated as a scoring reviewer and adjust affected fixtures or exports as needed.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Run panel configuration and prompt tests, verify five scoring personas plus one non-scoring coordinator, and execute the relevant existing test suite for regressions.",
             "parentId": "undefined"
           }

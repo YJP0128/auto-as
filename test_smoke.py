@@ -9,7 +9,20 @@ from auto_as.scoring import RUBRIC, score_evidence
 from auto_as.report import render_report
 from auto_as.leaderboard import assign_badges, render_leaderboard
 from auto_as.presentation import criterion_display
-from auto_as.panel import run_local_panel
+from auto_as.panel import (
+    COORDINATOR,
+    PERSONAS,
+    SCORING_INVARIANTS,
+    _parse_openai_discussion_event,
+    _reference_catalog,
+    build_openai_panel_prompt,
+    build_persona_prompt_context,
+    criterion_max_score,
+    judge_once,
+    parse_openai_judge,
+    resolve_criterion_key,
+    run_local_panel,
+)
 from auto_as.cli import main as cli_main
 
 
@@ -150,11 +163,198 @@ def test_leaderboard_review_flag():
 
 
 def test_panel():
-    result = run_local_panel({"submission": {"scenario": "x"}, "static_analysis": {"categories": {}}, "git_analysis": {}})
-    assert set(result["judges"]) == {"problem_wow", "ai_implementation", "completeness", "operational_quality", "presentation_collaboration"}
+    data = {"submission": {"scenario": "x"}, "static_analysis": {"categories": {}}, "git_analysis": {}}
+    result = run_local_panel(data)
+    rubric_keys = {resolve_criterion_key(persona) for persona in PERSONAS.values()}
+    assert len(PERSONAS) == 5
+    assert set(result["judges"]) == rubric_keys
+    assert all(judge["persona_id"] in PERSONAS for judge in result["judges"].values())
     assert "AI 기능 구현" in result["judges"]["ai_implementation"]["role"]
     assert all(judge["rounds"] == [judge["score"], judge["score"]] for judge in result["judges"].values())
-    assert result["discussion"][-1]["speaker"] == "Coordinator"
+    assert result["coordinator"]["is_scoring_persona"] is False
+    assert result["discussion"][-1]["speaker"] == COORDINATOR["display_name"]
+    for event in result["discussion"]:
+        assert set(event.get("score_snapshot", {})).issubset(rubric_keys)
+
+
+def test_persona_configuration_and_prompt_invariants():
+    required = {
+        "id", "display_name", "role", "specialty", "primary_criterion", "tone_guidance",
+        "preferences", "favored_evidence", "critique_guidance", "prohibited_scoring",
+        "representative_utterances", "catchphrase", "profile_image_path", "profile_image_alt",
+        "is_scoring_persona",
+    }
+    expected_mapping = {
+        "vc_investor": "problem_wow",
+        "open_source_maintainer": "ai_implementation",
+        "staff_engineer": "completeness",
+        "evaluation_reviewer": "operational_quality",
+        "it_creator": "presentation_collaboration",
+    }
+    assert set(PERSONAS) == set(expected_mapping)
+    assert {key: persona["primary_criterion"] for key, persona in PERSONAS.items()} == expected_mapping
+    assert len({persona["id"] for persona in PERSONAS.values()}) == 5
+    assert all(required <= set(persona) and persona["is_scoring_persona"] for persona in PERSONAS.values())
+    assert COORDINATOR["id"] not in PERSONAS and not COORDINATOR["is_scoring_persona"]
+    assert all(resolve_criterion_key(persona) == persona["primary_criterion"] for persona in PERSONAS.values())
+
+    canonical_rubric = {criterion: {"max_score": maximum} for criterion, maximum in {
+        "problem_wow": 20,
+        "ai_implementation": 20,
+        "completeness": 25,
+        "operational_quality": 15,
+        "presentation_collaboration": 20,
+    }.items()}
+    for persona in PERSONAS.values():
+        assert criterion_max_score(persona, canonical_rubric) == canonical_rubric[persona["primary_criterion"]]["max_score"]
+
+    evidence = {
+        "submission": {"scenario": "x"},
+        "static_analysis": {
+            "categories": {"golden_dataset": True, "monitoring": True},
+            "matches": {
+                "golden_dataset": [{"file": "eval/golden.jsonl", "line": 1, "text": "golden set"}],
+                "monitoring": [{"file": "metrics.py", "line": 1, "text": "prometheus"}],
+            },
+        },
+        "git_analysis": {},
+    }
+    prompt = build_openai_panel_prompt(evidence)
+    for persona_id, persona in PERSONAS.items():
+        context = build_persona_prompt_context(persona_id)
+        assert context["id"] == persona_id
+        assert context["primary_criterion"] == persona["primary_criterion"]
+        assert context["profile_image"]["alt"]
+        assert persona_id in prompt
+    assert all(rule in prompt for rule in SCORING_INVARIANTS)
+    assert "Persona voice changes wording only and never changes rubric scoring" in prompt
+    assert "EVIDENCE.reference_catalog[primary_criterion]" in prompt
+    assert "static_analysis.matches.golden_dataset[0]" in prompt
+    reference_catalog = _reference_catalog(evidence)
+    assert reference_catalog["operational_quality"] == ["static_analysis.matches.golden_dataset[0]"]
+    assert "static_analysis.matches.monitoring[0]" not in reference_catalog["operational_quality"]
+    operations = PERSONAS["evaluation_reviewer"]
+    assert all(signal in " ".join(operations["favored_evidence"]) for signal in ("golden_dataset", "eval_metric", "eval_signal"))
+    assert "monitoring·guardrails만으로 가점" in operations["prohibited_scoring"]
+
+    runtime = (Path(__file__).parent / "auto_as" / "panel.py").read_text(encoding="utf-8")
+    assert all(legacy not in runtime for legacy in ('"agent_design"', '"operations"', '"collaboration"'))
+    assert not any(name in runtime for name in ("아이유", "손흥민", "강호동", "백종원", "박명수"))
+
+
+def test_persona_tone_and_evidence_gaps_do_not_change_scores():
+    data = {"submission": {"scenario": "x"}, "static_analysis": {"categories": {}}, "git_analysis": {}}
+    before = judge_once(data)
+    persona = PERSONAS["vc_investor"]
+    original = persona["tone_guidance"]
+    try:
+        persona["tone_guidance"] = "완전히 다른 표현 방식"
+        after = judge_once(data)
+    finally:
+        persona["tone_guidance"] = original
+    for key in before:
+        assert before[key]["score"] == after[key]["score"]
+        assert before[key]["evidence"] == after[key]["evidence"]
+        assert before[key]["references"] == after[key]["references"]
+
+    panel = run_local_panel(data)
+    assert panel["judges"]["operational_quality"]["score"] == 0
+    assert panel["judges"]["operational_quality"]["confidence"] == "low"
+
+
+def test_openai_judge_requires_known_references():
+    grounded = {
+        "score": 12,
+        "confidence": "medium",
+        "insufficient_evidence": False,
+        "evidence": [{"claim": "시나리오가 제출됨", "reference": "submission.scenario"}],
+    }
+    rubric_key, accepted = parse_openai_judge("vc_investor", grounded, {"submission.scenario"})
+    assert rubric_key == "problem_wow"
+    assert accepted["score"] == 12
+    assert accepted["references"] == [{"type": "ai_reference", "value": "submission.scenario"}]
+    assert accepted["insufficient_evidence"] is False
+
+    _, rejected = parse_openai_judge("vc_investor", {
+        **grounded,
+        "evidence": [{"claim": "근거를 찾음", "reference": "invented.reference"}],
+    }, {"submission.scenario"})
+    assert rejected["score"] == 0
+    assert rejected["confidence"] == "low"
+    assert rejected["references"] == []
+    assert rejected["insufficient_evidence"] is True
+
+    _, monitoring_rejected = parse_openai_judge("evaluation_reviewer", {
+        "score": 15,
+        "confidence": "high",
+        "insufficient_evidence": False,
+        "evidence": [{"claim": "모니터링이 있음", "reference": "static_analysis.matches.monitoring[0]"}],
+    }, {"static_analysis.matches.golden_dataset[0]"})
+    assert monitoring_rejected["score"] == 0
+    assert monitoring_rejected["confidence"] == "low"
+
+    _, mixed = parse_openai_judge("vc_investor", {
+        **grounded,
+        "evidence": [
+            {"claim": "시나리오가 제출됨", "reference": "submission.scenario"},
+            {"claim": "확인하지 않은 주장", "reference": "invented.reference"},
+        ],
+    }, {"submission.scenario"})
+    assert mixed["score"] == 0
+    assert mixed["evidence"] == ["시나리오가 제출됨"]
+    assert mixed["insufficient_evidence"] is True
+
+
+def test_openai_discussion_scores_require_known_references():
+    catalog = {key: [] for key in RUBRIC}
+    catalog["operational_quality"] = ["static_analysis.matches.golden_dataset[0]"]
+    event = {
+        "persona_id": "evaluation_reviewer",
+        "at_seconds": 16,
+        "side": "right",
+        "kind": "proposal",
+        "score_after": 8,
+        "reference": "static_analysis.matches.golden_dataset[0]",
+        "text": "골든셋 근거로 8점을 제안합니다.",
+    }
+    accepted = _parse_openai_discussion_event(event, catalog)
+    assert accepted["score_snapshot"] == {"operational_quality": 8}
+    assert accepted["references"] == [{"type": "ai_reference", "value": "static_analysis.matches.golden_dataset[0]"}]
+
+    try:
+        _parse_openai_discussion_event({**event, "reference": "static_analysis.matches.monitoring[0]"}, catalog)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("discussion score with an unsupported reference should fail")
+
+
+def test_operational_persona_uses_only_t2_scoring_signals():
+    monitoring_only = {
+        "submission": {"scenario": "x"},
+        "static_analysis": {
+            "categories": {"monitoring": True, "guardrails": True},
+            "matches": {"monitoring": [{"file": "metrics.py", "line": 1, "text": "prometheus"}]},
+        },
+        "git_analysis": {},
+    }
+    panel = run_local_panel(monitoring_only)
+    assert panel["judges"]["operational_quality"]["score"] == 0
+    review = " ".join(event["text"] for event in panel["discussion"] if event.get("persona_id") == "evaluation_reviewer")
+    assert "점수 근거로 사용하지 않습니다" in review
+
+    golden = {
+        "submission": {"scenario": "x"},
+        "static_analysis": {
+            "categories": {"golden_dataset": True},
+            "matches": {"golden_dataset": [{"file": "eval/golden.jsonl", "line": 1, "text": "golden set"}]},
+        },
+        "git_analysis": {},
+    }
+    panel = run_local_panel(golden)
+    assert panel["judges"]["operational_quality"]["score"] == 8
+    review = " ".join(event["text"] for event in panel["discussion"] if event.get("persona_id") == "evaluation_reviewer")
+    assert "golden_dataset" in review and "eval/golden.jsonl" in review
 
 
 def test_test_file_path_is_contained():
@@ -170,5 +370,7 @@ def test_test_file_path_is_contained():
 
 
 if __name__ == "__main__":
-    test_validate_submission()
-    test_load_submission()
+    tests = [(name, function) for name, function in sorted(globals().items()) if name.startswith("test_") and callable(function)]
+    for _, function in tests:
+        function()
+    print(f"{len(tests)} tests passed")
