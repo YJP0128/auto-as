@@ -8,7 +8,16 @@ from auto_as.planner import heuristic_plan, plan_scenario
 from auto_as.scoring import RUBRIC, score_evidence
 from auto_as.report import render_report
 from auto_as.leaderboard import assign_badges, render_leaderboard
-from auto_as.panel import run_panel
+from auto_as.panel import (
+    COORDINATOR,
+    PERSONAS,
+    SCORING_INVARIANTS,
+    build_openai_panel_prompt,
+    build_persona_prompt_context,
+    criterion_max_score,
+    resolve_criterion_key,
+    run_local_panel,
+)
 from auto_as.cli import main as cli_main
 
 
@@ -212,10 +221,59 @@ def test_leaderboard_review_flag():
 
 
 def test_panel():
-    result = run_panel({"submission": {"scenario": "x"}, "static_analysis": {"categories": {}}, "git_analysis": {}})
-    assert set(result["judges"]) == {"problem_wow", "ai_implementation", "completeness", "operational_quality", "presentation_collaboration"}
+    data = {"submission": {"scenario": "x"}, "static_analysis": {"categories": {}}, "git_analysis": {}}
+    result = run_local_panel(data)
+    rubric_keys = {resolve_criterion_key(persona) for persona in PERSONAS.values()}
+    assert len(PERSONAS) == 5
+    assert set(result["judges"]) == rubric_keys
+    assert all(judge["persona_id"] in PERSONAS for judge in result["judges"].values())
     assert all(judge["rounds"] == [judge["score"], judge["score"]] for judge in result["judges"].values())
-    assert result["discussion"][-1]["speaker"] == "Coordinator"
+    assert result["coordinator"]["is_scoring_persona"] is False
+    assert result["discussion"][-1]["speaker"] == COORDINATOR["display_name"]
+    for event in result["discussion"]:
+        assert set(event.get("score_snapshot", {})).issubset(rubric_keys)
+
+
+def test_persona_configuration_and_prompt_invariants():
+    required = {
+        "id", "display_name", "role", "specialty", "primary_criterion", "tone_guidance",
+        "preferences", "favored_evidence", "critique_guidance", "prohibited_scoring",
+        "representative_utterances", "catchphrase", "profile_image_path", "profile_image_alt",
+        "is_scoring_persona",
+    }
+    expected_mapping = {
+        "vc_investor": "problem_wow",
+        "open_source_maintainer": "ai_implementation",
+        "staff_engineer": "completeness",
+        "evaluation_reviewer": "operational_quality",
+        "it_creator": "presentation_collaboration",
+    }
+    assert set(PERSONAS) == set(expected_mapping)
+    assert {key: persona["primary_criterion"] for key, persona in PERSONAS.items()} == expected_mapping
+    assert len({persona["id"] for persona in PERSONAS.values()}) == 5
+    assert all(required <= set(persona) and persona["is_scoring_persona"] for persona in PERSONAS.values())
+    assert COORDINATOR["id"] not in PERSONAS and not COORDINATOR["is_scoring_persona"]
+
+    canonical_rubric = {criterion: {"max_score": maximum} for criterion, maximum in {
+        "problem_wow": 20,
+        "ai_implementation": 20,
+        "completeness": 25,
+        "operational_quality": 15,
+        "presentation_collaboration": 20,
+    }.items()}
+    for persona in PERSONAS.values():
+        assert criterion_max_score(persona, canonical_rubric) == canonical_rubric[persona["primary_criterion"]]["max_score"]
+
+    prompt = build_openai_panel_prompt({"submission": {"scenario": "x"}, "static_analysis": {"categories": {}, "matches": {}}, "git_analysis": {}})
+    for persona_id, persona in PERSONAS.items():
+        context = build_persona_prompt_context(persona_id)
+        assert context["id"] == persona_id
+        assert context["primary_criterion"] == persona["primary_criterion"]
+        assert context["profile_image"]["alt"]
+        assert persona_id in prompt
+    assert all(rule in prompt for rule in SCORING_INVARIANTS)
+    assert "Persona voice changes wording only and never changes rubric scoring" in prompt
+    assert "Every scored claim must cite a concrete supplied reference" in prompt
 
 
 def test_test_file_path_is_contained():

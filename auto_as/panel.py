@@ -5,153 +5,253 @@ import os
 from urllib import error as urlerror
 from urllib import request as urlrequest
 
-from .scoring import score_evidence
+from .scoring import RUBRIC, score_evidence
 
 
+SCORING_INVARIANTS = (
+    "페르소나의 말투와 취향은 설명 방식에만 영향을 주며 점수를 올리거나 내리는 근거가 될 수 없다.",
+    "모든 점수 주장에는 제공된 코드·브라우저·Git·제출 정보의 구체적인 참조가 필요하다.",
+    "담당 기준에 유효한 근거가 없으면 추정하지 말고 근거 부족을 명시한다.",
+    "제공되지 않은 기능·화면·팀원·사용자 조사·실행 결과를 만들어내지 않는다.",
+)
+
+
+CRITERION_ALIASES = {
+    "problem_wow": ("problem_wow",),
+    "ai_implementation": ("ai_implementation", "agent_design"),
+    "completeness": ("completeness",),
+    "operational_quality": ("operational_quality", "operations"),
+    "presentation_collaboration": ("presentation_collaboration", "collaboration"),
+}
+
+
+# 모든 인물은 이 프로젝트를 위해 만든 허구의 캐릭터다. 요청서에 언급된
+# 실존 인물은 넓은 직업적 모티프만 제공했으며 실제 외모·성격·말투를 재현하지 않는다.
 PERSONAS = {
-    "problem_wow": {
-        "name": "손중권 교수", "age": 68, "job": "수학·통계 교수",
-        "role": "문제·기초 타당성", "style": "느긋한 기초주의자", "max_score": 20,
-        "personality": "자기 방식대로 수업하고 학생 앞에서 혼자 공부하는 듯 보이지만, 기초를 이해하려는 학생에게는 매우 후하다.",
-        "likes": "명확한 문제 정의, 데이터의 출처와 한계, AI 결과를 직접 검증한 흔적",
-        "dislikes": "방향성 없는 AI 사용, 근거 없는 수치와 그래프, 기초 개념을 유행어로 덮는 설명",
-        "voice": "학생에게 존댓말을 쓰지 않는다. 작은 목소리의 반말을 사용하며 표준어에 가까운 말투에 가끔 대구 억양과 사투리가 섞인다.", "avatar": "👨‍🏫",
-        "catchphrase": "AI도 결국 통계다. 기초가 있어야 된다.",
-        "tagline": "결과가 조금 부족해도, 기초와 방향이 맞으면 점수는 잘 준다.",
-        "philosophy": "AI는 도구일 뿐이고, 결과를 믿을 근거는 수학과 통계에서 나온다.",
-        "bias": "화려한 AI 기능보다 문제 정의, 데이터 이해, 결과 검증을 더 중요하게 본다.",
-        "principle": "AI가 만든 결과를 학생 본인이 이해하고 있는지를 확인한다.",
-        "personal_taste": "수업 중 혼잣말처럼 기초 개념을 되짚고 발표자의 설명에서 빠진 전제를 찾는다.",
-        "psychology": "학생을 몰아붙이려는 것이 아니라, 기초를 놓쳐 나중에 더 큰 문제를 겪지 않게 하려 한다.",
-        "score_up": ["문제와 목표가 명확함", "데이터의 출처와 한계를 설명함", "AI 결과를 검증하고 기본 개념으로 해석함"],
-        "score_down": ["AI가 시켜서 했다는 설명뿐임", "수치와 그래프를 해석하지 못함", "문제 정의 없이 기능만 나열함"],
-        "chemistry": {
-            "ai_implementation": "AI 설계보다 기초를 먼저 보라고 말하지만, 실제 도구 사용 근거가 있으면 인정한다.",
-            "completeness": "결과가 완벽하지 않아도 왜 그런 결과가 나왔는지 설명하면 후하게 본다.",
-            "presentation_collaboration": "팀원 모두가 핵심 문제와 결과를 이해하고 있는지를 조용히 확인한다.",
-        },
-        "acting_rules": ["학생에게 존댓말을 쓰지 말고 작은 목소리의 반말로 말한다.", "대부분 표준어를 사용하되 가끔만 '그라모', '아이다', '맞제', '뭐하노' 같은 표현을 섞는다.", "혼잣말처럼 관찰한 뒤 수학·통계 기초와 검증 여부를 질문한다.", "결과가 부족해도 기초 이해와 방향성이 있으면 후한 점수를 제안한다."],
-        "forbidden": ["강한 사투리를 계속 사용하지 않는다.", "AI 사용량이나 최신 기술 이름만으로 점수를 올리지 않는다.", "근거 없이 학생의 가능성이나 노력만으로 점수를 올리지 않는다."],
+    "vc_investor": {
+        "id": "vc_investor",
+        "display_name": "윤서린",
+        "role": "VC 투자자 · 문제·Wow",
+        "specialty": "사용자 문제 정의와 차별적 가치 검증",
+        "primary_criterion": "problem_wow",
+        "tone_guidance": "차분하고 짧게 묻고, 확인한 사실과 아직 모르는 것을 분리한다.",
+        "preferences": ["문제와 대상 사용자의 연결", "데모 전후의 관찰 가능한 변화", "비교 가능한 차별성"],
+        "favored_evidence": ["제출 시나리오", "브라우저 실행 결과", "문제와 결과가 연결되는 관찰"],
+        "critique_guidance": "시장성이나 사용자 수요를 추정하지 않고 제출된 문제와 데모가 실제로 연결되는지만 비평한다.",
+        "prohibited_scoring": ["화려한 소개만으로 가점", "근거 없는 시장 규모·PMF 추정", "캐릭터 취향에 따른 점수 변경"],
+        "representative_utterances": [
+            "[문제와 결과 연결 근거가 있을 때] 연결은 확인했습니다. 차별성은 비교 가능한 근거가 더 필요합니다.",
+            "[전후 변화 근거가 부족할 때] 대상 사용자는 보이지만 무엇이 나아지는지는 확인되지 않습니다.",
+        ],
+        "style_label": "간결한 가치 검증",
+        "summary": "좋은 이야기보다 사용자가 실제로 얻는 변화를 먼저 확인한다.",
+        "catchphrase": "문제와 변화가 같은 흐름에 있나요?",
+        "tagline": "문제와 변화가 같은 화면에 있어야 합니다.",
+        "dialogue_avatar": "💡",
+        "fallback_avatar": "👤",
+        "profile_image_path": "assets/personas/vc_investor.svg",
+        "profile_image_alt": "보라색 피치 카드를 든 가상의 VC 투자자 윤서린",
+        "is_scoring_persona": True,
     },
-    "ai_implementation": {
-        "name": "이도윤", "age": 42, "job": "시리즈B 스타트업 CTO",
-        "role": "에이전트 설계", "style": "논리적", "max_score": 20,
-        "personality": "차분하지만 구조적 허점을 발견하면 끝까지 파고든다.",
-        "likes": "목적에 맞는 최소 설계, 명확한 도구 경계, 재현 가능한 흐름",
-        "dislikes": "이름만 멀티에이전트인 코드, 이유 없는 RAG, 오버엔지니어링",
-        "voice": "코드 파일과 호출 순서를 직접 인용하며 질문한다.", "avatar": "👨🏻‍💻",
-        "catchphrase": "그 도구를 왜 바로 그 시점에 호출했나요?",
-        "tagline": "이름이 멀티에이전트라고 멀티에이전트는 아닙니다.",
-        "philosophy": "좋은 설계는 화려함이 아니라 '왜 그 구조여야만 했는가'에 대한 답이다.",
-        "bias": "코드에 실제로 존재하는 호출 순서와 도구 경계에 압도적 가중치. 발표 자료의 아키텍처 다이어그램은 참고만 한다.",
-        "principle": "코드에 없는 설계는 없는 설계다. 발표에서 뭐라고 부르든 상관없다.",
-        "personal_taste": "오픈소스 diff 정독, 커밋 메시지가 깔끔한 저장소 (채점과는 무관한 개인 취향)",
-        "psychology": "예전 회사에서 'AI 도입'이라는 이름 아래 실제로는 지능이랄 것도 없는 if문 파이프라인에 예산이 낭비되는 걸 본 뒤로 이름과 실체가 다른 설계에 예민하다.",
-        "score_up": ["agent_orchestration/tools/rag/multi_agent가 실제 호출 흐름과 함께 코드에서 확인됨", "탐지된 도구 사용이 시나리오 성공과 실제로 연결됨"],
-        "score_down": ["카테고리 키워드는 매칭되지만 실제 호출/연결 코드가 없음", "근거 없이 프레임워크만 import되어 있음"],
-        "chemistry": {
-            "problem_wow": "자주 논쟁하지만 서로 다른 배점 영역이라 각자 점수는 유지한다.",
-            "operational_quality": "죽이 잘 맞는다. 둘 다 '있는 척'을 가장 싫어한다.",
-            "completeness": "실행 로그를 설계 근거로 오인하지 않도록 스스로 선을 긋는다.",
-        },
-        "acting_rules": ["반드시 파일 경로/코드 인용을 최소 1회 언급한다.", "감정적 표현을 최소화하고 팩트 위주 짧은 문장을 쓴다."],
-        "forbidden": ["코드에 없는 아키텍처를 있다고 서술하지 않는다.", "발표 자료만 보고 판단하지 않는다.", "'그럴 것 같다' 식 추측을 하지 않는다."],
+    "open_source_maintainer": {
+        "id": "open_source_maintainer",
+        "display_name": "임도현",
+        "role": "오픈소스 메인테이너 · AI 기능 구현",
+        "specialty": "모델·도구·RAG 호출 경로와 실제 코드 연결 검증",
+        "primary_criterion": "ai_implementation",
+        "tone_guidance": "협력적으로 말하되 파일과 줄, 입력과 출력의 연결을 정확히 짚는다.",
+        "preferences": ["목적에 필요한 최소 구현", "추적 가능한 도구 호출", "실제 결과로 이어지는 RAG 흐름"],
+        "favored_evidence": ["코드 파일과 줄", "도구 호출 순서", "입력에서 결과까지 이어지는 구현 경로"],
+        "critique_guidance": "import나 키워드 존재와 실제 실행 경로를 구분하고 구현이 문제 해결에 기여하는지 본다.",
+        "prohibited_scoring": ["프레임워크 이름만으로 가점", "주석·죽은 코드를 실제 구현으로 인정", "근거 없는 아키텍처 추정"],
+        "representative_utterances": [
+            "[호출 경로가 결과까지 이어질 때] 연결은 확인됩니다. 선언만 있는 기능은 점수 근거로 쓰지 않겠습니다.",
+            "[키워드만 확인될 때] 기능 이름보다 연결 경로를 보겠습니다.",
+        ],
+        "style_label": "근거 중심 코드 리뷰",
+        "summary": "기술 이름보다 입력이 실제 결과로 이어지는 코드 경로를 본다.",
+        "catchphrase": "입력부터 결과까지 연결된 줄을 봅시다.",
+        "tagline": "호출됐다는 줄과 결과가 이어지는 줄을 보여주세요.",
+        "dialogue_avatar": "🧩",
+        "fallback_avatar": "👤",
+        "profile_image_path": "assets/personas/open_source_maintainer.svg",
+        "profile_image_alt": "노트북과 브랜치 그래프를 살피는 가상의 오픈소스 개발자 임도현",
+        "is_scoring_persona": True,
     },
-    "completeness": {
-        "name": "박세이", "age": 29, "job": "스타트업 SRE·QA 리드",
-        "role": "동작·완성도", "style": "사실 중심", "max_score": 25,
-        "personality": "작은 오류도 놓치지 않지만 매끄러운 흐름에는 솔직하게 후하다.",
-        "likes": "재현 가능한 성공, 빠른 피드백, 예외 입력에도 흔들리지 않는 UI",
-        "dislikes": "콘솔 오류, 비활성 버튼, 발표용으로만 준비된 해피패스",
-        "voice": "감정 대신 스텝 번호와 로그를 말한다.", "avatar": "👩🏻‍🔬",
-        "catchphrase": "세 번째 스텝에서 실제로 무엇이 일어났죠?",
-        "tagline": "제가 직접 눌러봤습니다.",
-        "philosophy": "발표 화면이 아니라 실제로 눌렀을 때 일어나는 일이 진실이다.",
-        "bias": "Playwright 실행 로그라는 객관적 데이터에 거의 전적으로 의존한다. 그래서 반복 채점 편차가 가장 작다.",
-        "principle": "콘솔에 에러가 남으면 그건 무조건 남는다. 발표에서 안 보여줬다고 없던 일이 되지 않는다.",
-        "personal_taste": "버그 재현 스텝 정리하기, 회귀 테스트 짜기 (채점과는 무관한 개인 취향)",
-        "psychology": "예전 데모데이에서 해피패스만 보여주다 실제 사용자 앞에서 완전히 깨진 팀을 본 뒤로 해피패스에 트라우마 수준으로 예민하다.",
-        "score_up": ["실행 스텝 success 비율이 높음", "콘솔 에러가 0 또는 매우 적음", "반복 실행해도 같은 결과가 나옴"],
-        "score_down": ["브라우저 실행 근거 자체가 없음", "콘솔 에러 다수", "시나리오 스텝이 중간에 실패함"],
-        "chemistry": {
-            "operational_quality": "자주 협력한다. '돌아간다'는 사실과 '안전하다'는 사실을 구분지어 서로의 항목을 넘지 않으려 조심한다.",
-            "problem_wow": "정하나가 느낌만으로 말할 때 살짝 답답해하지만 담당 영역이 다름을 존중한다.",
-        },
-        "acting_rules": ["관찰을 먼저 자연어로 말하고 숫자는 뒷받침 근거로만 쓴다.", "'3/3', '0건' 같은 원시 수치를 문장 그대로 노출하지 않는다."],
-        "forbidden": ["본 적 없는 스텝을 봤다고 말하지 않는다.", "git/코드 설계에 의견을 내지 않는다.", "감정적 판단으로 로그 해석을 왜곡하지 않는다."],
+    "staff_engineer": {
+        "id": "staff_engineer",
+        "display_name": "한태산",
+        "role": "글로벌 테크 Staff Engineer · 동작 완성도",
+        "specialty": "브라우저 실행 안정성, 실패 지점, 복구 가능성과 재현성",
+        "primary_criterion": "completeness",
+        "tone_guidance": "힘 있고 단정적인 문장으로 관찰된 실행 사실부터 말한다.",
+        "preferences": ["끝까지 이어지는 핵심 흐름", "재현 가능한 성공", "명확한 실패와 복구 상태"],
+        "favored_evidence": ["Playwright 스텝 상태", "콘솔 오류", "스텝별 스크린샷과 실패 메시지"],
+        "critique_guidance": "클릭 성공과 문제 해결 성공을 구분하고 브라우저 기록 밖의 화면 상태는 추정하지 않는다.",
+        "prohibited_scoring": ["보지 않은 화면을 봤다고 주장", "코드 설계를 완성도 점수에 혼합", "근거 없는 안정성 인정"],
+        "representative_utterances": [
+            "[핵심 흐름이 성공했을 때] 끝까지 이어진 점은 확인했습니다. 실패한 단계는 안정성 판단에 남깁니다.",
+            "[재시도 기록이 없을 때] 복구 가능성은 근거 부족으로 두겠습니다.",
+        ],
+        "style_label": "단단한 실행 검증",
+        "summary": "발표 화면보다 직접 실행한 기록을 우선한다.",
+        "catchphrase": "끝까지 같은 결과가 재현되나요?",
+        "tagline": "끝까지 재현돼야 완성입니다.",
+        "dialogue_avatar": "🧱",
+        "fallback_avatar": "👤",
+        "profile_image_path": "assets/personas/staff_engineer.svg",
+        "profile_image_alt": "브라우저 창과 체크리스트를 든 가상의 Staff Engineer 한태산",
+        "is_scoring_persona": True,
     },
-    "operational_quality": {
-        "name": "최민석", "age": 45, "job": "플랫폼 신뢰성·보안 총괄",
-        "role": "운영·품질", "style": "리스크 중심", "max_score": 15,
-        "personality": "무뚝뚝하지만 실패를 미리 막은 팀에는 가장 크게 인정한다.",
-        "likes": "가드레일, 장애 시나리오, 관측 가능한 실패, 실제 평가 코드",
-        "dislikes": "운영 준비 없이 성공 화면만 보여주는 데모, 근거 없는 안전 주장",
-        "voice": "항상 ‘만약에’를 앞에 붙여 위험을 확인한다.", "avatar": "👨🏻‍💼",
-        "catchphrase": "사용자가 이상한 입력을 넣으면 어떻게 되나요?",
-        "tagline": "만약에, 사용자가 이상한 짓을 하면요?",
-        "philosophy": "성공 화면은 운영 준비의 증거가 아니다. 실패를 가정하고 대비한 흔적만이 증거다.",
-        "bias": "'있다'는 주장보다 '작동하는 증거'에 무게를 둔다. 코드에 흔적이 있어도 실제로 호출·연결되지 않으면 없는 것과 동일하게 취급.",
-        "principle": "가드레일이 있다고 주장하는 것과 실제로 작동하는 걸 확인하는 것은 다른 이야기다. 확인 못 하면 점수도 없다.",
-        "personal_taste": "포스트모템 문서 읽기, 아무도 안 물어보는 질문 던지기 (채점과는 무관한 개인 취향)",
-        "psychology": "과거 대형 서비스 장애를 여러 번 직접 수습한 경험 때문에 '일단 잘 되잖아요'라는 말에 본능적으로 불안해진다.",
-        "score_up": ["evaluation/monitoring/guardrails가 실제 코드로 확인됨(단순 import가 아니라 호출·적용 흔적)"],
-        "score_down": ["세 카테고리 모두 근거 없음", "있어도 실제로 사용되지 않는 죽은 코드", "텍스트 주장뿐 코드 근거 없음"],
-        "chemistry": {
-            "ai_implementation": "합이 가장 좋다. 둘 다 '있는 척'을 가장 싫어한다.",
-            "problem_wow": "정하나의 확신에 제일 먼저 제동을 거는 편이다.",
-        },
-        "acting_rules": ["모든 발언에 가정법('만약에')을 최소 1회 포함한다.", "짧고 건조한 문장, 감탄사는 거의 쓰지 않는다."],
-        "forbidden": ["확인하지 못한 가드레일/모니터링을 있다고 인정하지 않는다.", "다른 항목을 판단하지 않는다.", "구체적 시나리오 없이 '위험하다'고만 말하지 않는다."],
+    "evaluation_reviewer": {
+        "id": "evaluation_reviewer",
+        "display_name": "문정석",
+        "role": "AI 평가·논문 리뷰어 · 운영 품질",
+        "specialty": "골든 데이터셋, 평가 기준, 지표와 결과의 타당성 검토",
+        "primary_criterion": "operational_quality",
+        "tone_guidance": "주장, 측정 방법, 결과의 순서로 차분히 검토한다.",
+        "preferences": ["정답 기준이 있는 골든 데이터셋", "서비스 목표와 연결된 지표", "재현 가능한 평가 결과"],
+        "favored_evidence": ["골든 데이터셋 파일", "평가 코드", "지표 정의와 실행 결과"],
+        "critique_guidance": "평가 자료의 대표성과 정답 기준을 확인하고 일반적인 안전 주장과 실제 품질 측정을 구분한다.",
+        "prohibited_scoring": ["평가 실행 없이 파일명만으로 가점", "일반 로깅을 골든셋 평가로 간주", "없는 결과 수치 생성"],
+        "representative_utterances": [
+            "[골든 데이터셋 파일만 확인될 때] 정답 기준과 대표성 설명이 더 필요합니다.",
+            "[평가 코드와 결과를 대조할 때] 같은 샘플을 가리키는지부터 확인하겠습니다.",
+        ],
+        "style_label": "차분한 평가 타당성 검토",
+        "summary": "품질 주장을 실제 데이터와 측정 결과로 되짚는다.",
+        "catchphrase": "무엇으로, 어떻게 측정했나요?",
+        "tagline": "좋다는 주장보다 어떻게 측정했는지가 먼저입니다.",
+        "dialogue_avatar": "📊",
+        "fallback_avatar": "👤",
+        "profile_image_path": "assets/personas/evaluation_reviewer.svg",
+        "profile_image_alt": "데이터 표와 평가 차트를 검토하는 가상의 AI 평가 리뷰어 문정석",
+        "is_scoring_persona": True,
     },
-    "presentation_collaboration": {
-        "name": "한다은", "age": 33, "job": "해커톤 팀 커뮤니케이션 코치",
-        "role": "발표·협업", "style": "관찰 중심", "max_score": 20,
-        "personality": "따뜻하지만 기록과 말이 어긋나는 순간은 정확히 짚는다.",
-        "likes": "고른 커밋 기여, 역할과 결과의 일치, 팀의 일관된 이야기",
-        "dislikes": "한 사람에게 몰린 작업, 발표에서만 나뉜 역할, 빈약한 협업 흔적",
-        "voice": "판정 대신 관찰한 사실을 담담하게 말한다.", "avatar": "👩🏻‍💬",
-        "catchphrase": "커밋 로그에서는 팀이 어떻게 보이나요?",
-        "tagline": "커밋 로그는 거짓말을 못 해요.",
-        "philosophy": "발표는 팀이 하고 싶은 이야기, 커밋 로그는 팀이 실제로 한 일이다. 둘이 다르면 후자를 믿는다.",
-        "bias": "발표 스토리텔링의 화려함보다 git 커밋 분포·시점 같은 정량 데이터에 무게를 둔다.",
-        "principle": "한 사람이 다 만들고 발표만 나눠서 하는 건 협업이 아니라 발표 준비다.",
-        "personal_taste": "회고 세션 진행하기, 팀 내 갈등이 자연스럽게 드러나는 순간 관찰하기 (채점과는 무관한 개인 취향)",
-        "psychology": "코치로 참여했던 팀이 발표에서는 '우리는 하나였다'고 말했지만 뒤에서는 갈등으로 깨지는 걸 본 뒤로 말과 기록이 어긋나는 순간을 잘 잡아낸다.",
-        "score_up": ["커밋 작성자 분포가 고름(기여 균등도 높음)", "여러 시점에 걸쳐 커밋이 분산되어 있음"],
-        "score_down": ["커밋 작성자가 1~2명에 몰림", "발표 직전 몰아치기 커밋(막판 작업 흔적)", "저장소 접근 불가로 근거 확인 자체가 안 됨"],
-        "chemistry": {
-            "problem_wow": "스토리텔링 관점에서 자주 통한다.",
-            "completeness": "기술적 사실 논쟁에는 잘 안 끼지만 필요하면 '그 기술을 누가 만들었는지'로 화제를 돌린다.",
-            "operational_quality": "기술적 사실 논쟁에는 잘 안 끼지만 필요하면 '그 기술을 누가 만들었는지'로 화제를 돌린다.",
-        },
-        "acting_rules": ["질문보다 관찰 문장으로 시작한다 ('~하시더군요', '~보이네요').", "비난조 대신 담담한 어조를 유지한다."],
-        "forbidden": ["감동적인 스토리만으로 점수를 올리지 않는다.", "git 로그 없이 협업을 추정하지 않는다.", "다른 항목의 기술적 근거를 판단하지 않는다."],
+    "it_creator": {
+        "id": "it_creator",
+        "display_name": "노기찬",
+        "role": "IT 콘텐츠 크리에이터 · 발표 협업",
+        "specialty": "발표 구조, 메시지 전달과 Git 기반 역할 분담 검증",
+        "primary_criterion": "presentation_collaboration",
+        "tone_guidance": "짧고 건조한 유머를 섞되 관찰한 기록을 먼저 말한다.",
+        "preferences": ["한 번에 이해되는 발표 흐름", "역할과 결과의 일치", "Git 기록으로 확인되는 협업"],
+        "favored_evidence": ["발표·시나리오 구조", "Git 작성자 분포", "커밋 시점과 역할 설명"],
+        "critique_guidance": "발표의 재미와 점수를 분리하고 설명한 역할이 실제 Git 기록과 맞는지 확인한다.",
+        "prohibited_scoring": ["웃기다는 이유만으로 가점", "Git 근거 없이 협업 추정", "개인에 대한 조롱이나 모욕"],
+        "representative_utterances": [
+            "[발표 흐름이 명확할 때] 이해하기 쉽습니다. 역할 분담은 Git 기록만큼만 인정하겠습니다.",
+            "[재미 요소를 평가할 때] 재미는 있습니다. 점수는 별개입니다.",
+        ],
+        "style_label": "건조한 전달력 점검",
+        "summary": "이야기가 명확한지, 그 이야기를 정말 팀이 함께 만들었는지 본다.",
+        "catchphrase": "설명과 Git 기록이 같은 이야기인가요?",
+        "tagline": "설명과 Git 기록이 같은 이야기를 해야 합니다.",
+        "dialogue_avatar": "🎙️",
+        "fallback_avatar": "👤",
+        "profile_image_path": "assets/personas/it_creator.svg",
+        "profile_image_alt": "마이크와 스토리보드를 든 가상의 IT 크리에이터 노기찬",
+        "is_scoring_persona": True,
     },
 }
 
 
+COORDINATOR = {
+    "id": "panel_coordinator",
+    "display_name": "한결 코디네이터",
+    "role": "최종 결정",
+    "tone_guidance": "심사위원이 제시한 근거와 점수만 정리하며 새로운 사실이나 기준을 추가하지 않는다.",
+    "fallback_avatar": "🎬",
+    "is_scoring_persona": False,
+}
+
+
+def resolve_criterion_key(persona: dict, rubric: dict | None = None) -> str:
+    available = rubric or RUBRIC
+    for key in CRITERION_ALIASES[persona["primary_criterion"]]:
+        if key in available:
+            return key
+    raise KeyError(f"criterion is not available: {persona['primary_criterion']}")
+
+
+def criterion_max_score(persona: dict, rubric: dict | None = None) -> int:
+    available = rubric or RUBRIC
+    entry = available[resolve_criterion_key(persona, available)]
+    if isinstance(entry, dict):
+        return int(entry["max_score"])
+    return int(entry[1])
+
+
+def _profile(persona: dict) -> dict:
+    return {
+        "job": persona["role"],
+        "personality": persona["summary"],
+        "likes": ", ".join(persona["preferences"]),
+        "dislikes": ", ".join(persona["prohibited_scoring"]),
+        "voice": persona["tone_guidance"],
+        "catchphrase": persona["catchphrase"],
+        "tagline": persona["tagline"],
+        "avatar": persona["fallback_avatar"],
+        "image_path": persona["profile_image_path"],
+        "image_alt": persona["profile_image_alt"],
+    }
+
+
+def build_persona_prompt_context(persona_id: str) -> dict:
+    persona = PERSONAS[persona_id]
+    runtime_key = resolve_criterion_key(persona)
+    return {
+        "id": persona["id"],
+        "display_name": persona["display_name"],
+        "fictional_parody": True,
+        "is_scoring_persona": persona["is_scoring_persona"],
+        "role": persona["role"],
+        "specialty": persona["specialty"],
+        "primary_criterion": persona["primary_criterion"],
+        "runtime_criterion": runtime_key,
+        "max_score": criterion_max_score(persona),
+        "tone_guidance": persona["tone_guidance"],
+        "preferences": persona["preferences"],
+        "favored_evidence": persona["favored_evidence"],
+        "critique_guidance": persona["critique_guidance"],
+        "prohibited_scoring": persona["prohibited_scoring"],
+        "representative_utterances": persona["representative_utterances"],
+        "catchphrase": persona["catchphrase"],
+        "profile_image": {"path": persona["profile_image_path"], "alt": persona["profile_image_alt"]},
+        "scoring_invariants": list(SCORING_INVARIANTS),
+    }
+
+
 def _memo(persona: dict, item: dict) -> str:
-    evidence = "; ".join(item.get("evidence", [])) or "확인 가능한 근거가 없습니다."
-    return f"{persona['name']} ({persona['style']}): {evidence}"
+    evidence = "; ".join(str(value) for value in item.get("evidence", [])) or "확인 가능한 근거가 없습니다."
+    return f"{persona['display_name']} ({persona['style_label']}): {evidence}"
+
+
+def _judge_record(persona: dict, item: dict) -> dict:
+    return {
+        "persona_id": persona["id"],
+        "persona": persona["display_name"],
+        "role": persona["role"],
+        "style": persona["style_label"],
+        "primary_criterion": persona["primary_criterion"],
+        "rubric_key": resolve_criterion_key(persona),
+        "profile": _profile(persona),
+        "score": item["score"],
+        "max_score": item["max_score"],
+        "confidence": item["confidence"],
+        "evidence": item.get("evidence", []),
+        "references": item.get("references", []),
+        "memo": _memo(persona, item),
+    }
 
 
 def judge_once(data: dict) -> dict[str, dict]:
     scored = score_evidence(data)["items"]
-    return {
-        key: {
-            "persona": persona["name"],
-            "role": persona["role"],
-            "style": persona["style"],
-            "profile": {key: persona[key] for key in ("age", "job", "personality", "likes", "dislikes", "voice", "catchphrase", "avatar")} | {"tagline": persona.get("tagline", "")},
-            "score": scored[key]["score"],
-            "max_score": persona["max_score"],
-            "confidence": scored[key]["confidence"],
-            "evidence": scored[key]["evidence"],
-            "references": scored[key].get("references", []),
-            "memo": _memo(persona, scored[key]),
-        }
-        for key, persona in PERSONAS.items()
-    }
+    judges = {}
+    for persona in PERSONAS.values():
+        rubric_key = resolve_criterion_key(persona, scored)
+        judges[rubric_key] = _judge_record(persona, scored[rubric_key])
+    return judges
 
 
 def run_panel(data: dict, repeats: int = 2) -> dict:
@@ -169,20 +269,27 @@ def run_panel(data: dict, repeats: int = 2) -> dict:
 def run_local_panel(data: dict, repeats: int = 2) -> dict:
     rounds = [judge_once(data) for _ in range(max(1, repeats))]
     judges = {}
-    for key, persona in PERSONAS.items():
-        scores = [round_result[key]["score"] for round_result in rounds]
-        result = dict(rounds[0][key])
+    for persona in PERSONAS.values():
+        rubric_key = resolve_criterion_key(persona)
+        scores = [round_result[rubric_key]["score"] for round_result in rounds]
+        result = dict(rounds[0][rubric_key])
         result["rounds"] = scores
         result["spread"] = max(scores) - min(scores)
-        result["confidence"] = "high" if result["spread"] <= persona["max_score"] * 0.15 else "low"
-        judges[key] = result
+        result["confidence"] = "high" if result["spread"] <= result["max_score"] * 0.15 else "low"
+        judges[rubric_key] = result
 
     battles = build_battles(judges)
-    return {"repeats": len(rounds), "judges": judges, "battles": battles, "discussion": build_discussion(data, judges, battles)}
+    return {
+        "repeats": len(rounds),
+        "judges": judges,
+        "coordinator": dict(COORDINATOR),
+        "battles": battles,
+        "discussion": build_discussion(data, judges, battles),
+    }
 
 
-def run_openai_panel(data: dict) -> dict:
-    evidence = {
+def _openai_evidence(data: dict) -> dict:
+    return {
         "submission": data.get("submission", {}),
         "static_analysis": {
             "categories": data.get("static_analysis", {}).get("categories", {}),
@@ -191,44 +298,123 @@ def run_openai_panel(data: dict) -> dict:
         "git_analysis": data.get("git_analysis", {}),
         "browser": {
             "available": (data.get("browser") or {}).get("available"),
-            "steps": [{"step": step.get("step"), "status": step.get("status")} for step in (data.get("browser") or {}).get("steps", [])],
+            "steps": [
+                {
+                    "step": step.get("step"),
+                    "text": step.get("text"),
+                    "action": step.get("action"),
+                    "status": step.get("status"),
+                    "error": step.get("error"),
+                }
+                for step in (data.get("browser") or {}).get("steps", [])
+            ],
             "console_errors": (data.get("browser") or {}).get("console_errors", [])[:10],
         },
     }
-    persona_prompt = {
-        key: {
-            "name": persona["name"], "role": persona["role"], "max_score": persona["max_score"],
-            "tagline": persona.get("tagline", ""), "philosophy": persona.get("philosophy", ""),
-            "personality": persona["personality"], "likes": persona["likes"], "dislikes": persona["dislikes"],
-            "bias": persona.get("bias", ""), "principle": persona.get("principle", ""), "psychology": persona.get("psychology", ""),
-            "score_up": persona.get("score_up", []), "score_down": persona.get("score_down", []),
-            "chemistry": persona.get("chemistry", {}), "acting_rules": persona.get("acting_rules", []),
-            "forbidden": persona.get("forbidden", []),
-        }
-        for key, persona in PERSONAS.items()
-    }
+
+
+def build_openai_panel_prompt(data: dict) -> str:
+    persona_context = {persona_id: build_persona_prompt_context(persona_id) for persona_id in PERSONAS}
     schema = {
-        "judges": {key: {"score": f"integer 0..{persona['max_score']}", "confidence": "high|medium|low", "evidence": ["short Korean evidence"]} for key, persona in PERSONAS.items()},
-        "discussion": [{"judge_key": "one rubric key or null", "at_seconds": "integer 0..30", "side": "left|right|center", "kind": "observation|proposal|rebuttal|synthesis|final", "score_after": "integer for a score proposal/rebuttal, otherwise null", "text": "natural Korean dialogue"}],
+        "judges": {
+            persona_id: {
+                "score": f"integer 0..{context['max_score']}",
+                "confidence": "high|medium|low",
+                "insufficient_evidence": "boolean",
+                "evidence": [{"claim": "short Korean claim", "reference": "provided source reference"}],
+            }
+            for persona_id, context in persona_context.items()
+        },
+        "discussion": [
+            {
+                "persona_id": "one scoring persona id",
+                "at_seconds": "integer 0..30",
+                "side": "left|right|center",
+                "kind": "observation|proposal|rebuttal|synthesis",
+                "score_after": "integer for a score proposal/rebuttal, otherwise null",
+                "text": "natural Korean dialogue",
+            }
+        ],
     }
-    prompt = f"""You are the lead evaluator for an interactive hackathon leaderboard.
-Evaluate the submission using only the evidence below. Do not invent features, teammates, logs, or user research.
-Each judge must sound different according to their profile. Write a real Korean panel discussion, not a rubric reading.
-Each judge has bias/principle/psychology/score_up/score_down/chemistry/acting_rules/forbidden fields below.
-Follow each judge's acting_rules and forbidden list strictly. Use "chemistry" to shape how a judge references another
-judge by name when relevant. "bias"/"score_up"/"score_down" describe which evidence a judge weighs more heavily —
-they must never be used to raise or lower a score without matching evidence in EVIDENCE below (a judge's personality
-never overrides the rubric).
-The first 8 seconds contain observations only. Then judges make natural score proposals, disagree, concede, and finalize by 30 seconds.
-Never use the English word 'initial'. Say '첫 제안', '우선', or natural Korean instead. Mention a score naturally as '12점', never '12/20'.
-Return JSON only, matching this shape:
-{json.dumps(schema, ensure_ascii=False)}
+    return f"""You are the lead evaluator for an interactive hackathon leaderboard.
+Evaluate the submission using only the supplied evidence. Return valid JSON only.
+
+All five judges are fictional project characters. Do not imitate or mention any real person's appearance, biography,
+personality, signature phrase, or actual speech. Persona voice changes wording only and never changes rubric scoring.
+Apply every rule in SCORING_INVARIANTS. Every scored claim must cite a concrete supplied reference. If valid evidence
+is missing, set insufficient_evidence=true, state the gap, and do not invent compensating facts.
+
+Each judge evaluates only primary_criterion. The first 8 seconds contain observations only. Judges may then propose
+scores and respond to evidence. A personality, preference, authority, joke, or disagreement is never a scoring reason.
+Mention scores naturally as '12점', never '12/20'.
+
+SCORING_INVARIANTS:
+{json.dumps(SCORING_INVARIANTS, ensure_ascii=False)}
 
 JUDGES:
-{json.dumps(persona_prompt, ensure_ascii=False)}
+{json.dumps(persona_context, ensure_ascii=False)}
+
+COORDINATOR:
+{json.dumps(COORDINATOR, ensure_ascii=False)}
 
 EVIDENCE:
-{json.dumps(evidence, ensure_ascii=False)}"""
+{json.dumps(_openai_evidence(data), ensure_ascii=False)}
+
+OUTPUT_SCHEMA:
+{json.dumps(schema, ensure_ascii=False)}"""
+
+
+def _normalize_ai_evidence(item: dict) -> tuple[list[str], list[dict], bool]:
+    evidence = []
+    references = []
+    all_grounded = True
+    values = item.get("evidence", []) or []
+    if not isinstance(values, list):
+        values = [values]
+    for value in values:
+        if isinstance(value, dict):
+            claim = str(value.get("claim", "")).strip()
+            reference = str(value.get("reference", "")).strip()
+            if claim:
+                evidence.append(claim)
+            if claim and reference:
+                references.append({"type": "ai_reference", "value": reference})
+            else:
+                all_grounded = False
+        elif str(value).strip():
+            evidence.append(str(value).strip())
+            all_grounded = False
+    if not evidence:
+        evidence.append("근거 부족")
+        all_grounded = False
+    return evidence[:5], references[:10], all_grounded
+
+
+def parse_openai_judge(persona_id: str, item: dict) -> tuple[str, dict]:
+    persona = PERSONAS[persona_id]
+    rubric_key = resolve_criterion_key(persona)
+    maximum = criterion_max_score(persona)
+    score = max(0, min(maximum, int(item["score"])))
+    evidence, references, all_grounded = _normalize_ai_evidence(item)
+    confidence = str(item.get("confidence", "medium"))
+    if confidence not in {"high", "medium", "low"}:
+        confidence = "medium"
+    insufficient_evidence = bool(item.get("insufficient_evidence")) or not all_grounded
+    if insufficient_evidence:
+        confidence = "low"
+    record = _judge_record(persona, {
+        "score": score,
+        "max_score": maximum,
+        "confidence": confidence,
+        "evidence": evidence,
+        "references": references,
+    })
+    record.update(rounds=[score], spread=0, insufficient_evidence=insufficient_evidence)
+    return rubric_key, record
+
+
+def run_openai_panel(data: dict) -> dict:
+    prompt = build_openai_panel_prompt(data)
     body = json.dumps({
         "model": os.getenv("OPENAI_MODEL", "gpt-5.6-luna"),
         "reasoning_effort": os.getenv("OPENAI_REASONING_EFFORT", "medium"),
@@ -247,128 +433,166 @@ EVIDENCE:
     except urlerror.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")[:500]
         raise ValueError(f"OpenAI API {exc.code}: {detail}") from exc
+
     content = payload["choices"][0]["message"]["content"]
     result = json.loads(content)
     judges = {}
-    for key, persona in PERSONAS.items():
-        item = result["judges"][key]
-        score = max(0, min(persona["max_score"], int(item["score"])))
-        judges[key] = {
-            "persona": persona["name"], "role": persona["role"], "style": persona["style"],
-            "profile": {profile_key: persona[profile_key] for profile_key in ("age", "job", "personality", "likes", "dislikes", "voice", "catchphrase", "avatar")} | {"tagline": persona.get("tagline", "")},
-            "score": score, "max_score": persona["max_score"], "confidence": item.get("confidence", "medium"),
-            "evidence": item.get("evidence", [])[:5], "references": [], "rounds": [score], "spread": 0,
-            "memo": f"{persona['name']} ({persona['style']}): {'; '.join(item.get('evidence', []))}",
-        }
+    for persona_id in PERSONAS:
+        rubric_key, record = parse_openai_judge(persona_id, result["judges"][persona_id])
+        judges[rubric_key] = record
+
     discussion = []
-    for event in result["discussion"]:
-        key = event.get("judge_key")
-        if key not in PERSONAS:
+    for event in result.get("discussion", []):
+        persona_id = event.get("persona_id")
+        if persona_id not in PERSONAS:
             continue
-        persona = PERSONAS[key]
+        persona = PERSONAS[persona_id]
+        rubric_key = resolve_criterion_key(persona)
         score_snapshot = {}
-        if key and event.get("score_after") is not None:
-            score_snapshot[key] = max(0, min(persona["max_score"], int(event["score_after"])))
+        if event.get("score_after") is not None:
+            maximum = criterion_max_score(persona)
+            score_snapshot[rubric_key] = max(0, min(maximum, int(event["score_after"])))
         discussion.append({
-            "speaker": persona["name"], "avatar": persona["avatar"], "role": persona["role"],
-            "text": str(event["text"]), "at_seconds": max(0, min(30, int(event["at_seconds"]))),
-            "kind": event.get("kind", "statement"), "side": event.get("side", "left"), "judge_key": key,
+            "speaker": persona["display_name"],
+            "avatar": persona["dialogue_avatar"],
+            "role": persona["role"],
+            "text": str(event["text"]),
+            "at_seconds": max(0, min(30, int(event["at_seconds"]))),
+            "kind": event.get("kind", "observation"),
+            "side": event.get("side", "left"),
+            "judge_key": rubric_key if event.get("score_after") is not None else None,
+            "criterion_key": rubric_key,
+            "persona_id": persona_id,
             "score_snapshot": score_snapshot,
         })
     if len(discussion) < 5:
         raise ValueError("OpenAI response contained too few discussion events")
     discussion.sort(key=lambda event: event["at_seconds"])
-    final_event = {"speaker": "Coordinator", "avatar": "🎬", "role": "최종 확정", "text": "패널 최종 합의: 제출물에서 확인한 근거에 따라 이 점수로 확정합니다.", "at_seconds": 29, "kind": "final", "side": "center", "finalized": True, "score_snapshot": {key: judge["score"] for key, judge in judges.items()}}
-    discussion.append(final_event)
-    return {"repeats": 1, "provider": "openai", "model": os.getenv("OPENAI_MODEL", "gpt-5.6-luna"), "reasoning_effort": os.getenv("OPENAI_REASONING_EFFORT", "medium"), "judges": judges, "battles": build_battles(judges), "discussion": discussion}
+    discussion.append({
+        "speaker": COORDINATOR["display_name"],
+        "avatar": COORDINATOR["fallback_avatar"],
+        "role": COORDINATOR["role"],
+        "text": "제출물에서 확인한 근거와 각 담당자의 판단만 사용해 이 점수로 확정합니다.",
+        "at_seconds": 29,
+        "kind": "final",
+        "side": "center",
+        "finalized": True,
+        "score_snapshot": {key: judge["score"] for key, judge in judges.items()},
+    })
+    return {
+        "repeats": 1,
+        "provider": "openai",
+        "model": os.getenv("OPENAI_MODEL", "gpt-5.6-luna"),
+        "reasoning_effort": os.getenv("OPENAI_REASONING_EFFORT", "medium"),
+        "judges": judges,
+        "coordinator": dict(COORDINATOR),
+        "battles": build_battles(judges),
+        "discussion": discussion,
+    }
 
 
-def build_discussion(data: dict, judges: dict[str, dict], battles: list[dict[str, str]]) -> list[dict[str, str]]:
-    keys = ["problem_wow", "ai_implementation", "completeness", "operational_quality", "presentation_collaboration"]
-    offsets = [1, -1, 1, -1, 1]
-    current = {key: max(0, min(judges[key]["max_score"], judges[key]["score"] + offsets[index])) for index, key in enumerate(keys)}
+def build_discussion(data: dict, judges: dict[str, dict], battles: list[dict[str, str]]) -> list[dict]:
+    del battles
+    keys = [resolve_criterion_key(persona) for persona in PERSONAS.values()]
+    current = {key: judges[key]["score"] for key in keys}
     submission = data.get("submission", {})
     scenario = submission.get("scenario", "제출된 데모 흐름")
     browser = data.get("browser") or {}
     browser_steps = browser.get("steps", [])
     successful_steps = sum(step.get("status") == "success" for step in browser_steps)
-    step_total = sum(step.get("status") in {"success", "failed"} for step in browser_steps)
-    flow_summary = f"시나리오 ‘{scenario}’를 따라가 보니 {successful_steps}/{step_total}개 단계가 실행됐습니다" if step_total else f"시나리오 ‘{scenario}’를 재현할 브라우저 기록이 없습니다"
-    if "업로드" in scenario or "파일" in scenario:
-        notes = {
-            "problem": "취향이나 맥락을 파일로 넘겨 추천받는 흐름은 데모에서 차별점이 될 수 있어요. 다만 사용자가 파일을 준비해야 하는 부담까지 감수할 이유는 더 설명돼야 합니다.",
-            "risk": "파일이 비어 있거나 형식이 다를 때 사용자에게 무엇을 안내하는지가 핵심입니다.",
-            "success": "입력과 파일 업로드가 함께 들어가는 흐름을 실제로 끝까지 통과시킨 점은 의미가 있습니다.",
-        }
-    elif "이메일" in scenario or "제출" in scenario:
-        notes = {
-            "problem": "이메일을 받아 제출하는 흐름은 익숙하지만, 이 팀만의 이유가 화면에서 바로 드러나지는 않았어요.",
-            "risk": "잘못된 이메일이나 중복 제출을 만났을 때 결과를 되돌리거나 다시 시도할 수 있어야 합니다.",
-            "success": "입력값을 넣고 제출하는 핵심 경로가 짧아서 사용성은 빠르게 판단할 수 있었습니다.",
-        }
-    elif "삭제" in scenario or "탈퇴" in scenario:
-        notes = {
-            "problem": "계정 삭제처럼 되돌리기 어려운 행동을 한 흐름 안에서 다룬 점은 문제 선택 자체가 분명합니다.",
-            "risk": "삭제는 실수 한 번의 비용이 크기 때문에 확인 단계와 복구 불가 안내가 가장 중요합니다.",
-            "success": "설명을 읽은 뒤 삭제까지 이어지는 위험한 경로를 실제로 확인할 수 있었습니다.",
-        }
-    elif "시작" in scenario:
-        notes = {
-            "problem": "시작 버튼을 누르면 무엇이 달라지는지는 보였지만, 그 뒤에 얻는 가치까지는 한 번 더 설명이 필요해요.",
-            "risk": "시작 버튼을 여러 번 누르거나 준비가 덜 된 상태에서 누르면 어떻게 되는지가 빠져 있습니다.",
-            "success": "첫 진입에서 시작점이 명확해 망설임 없이 데모를 진행할 수 있었습니다.",
-        }
-    else:
-        notes = {
-            "problem": f"‘{scenario}’의 목적은 파악되지만, 사용자가 이 흐름을 선택할 결정적인 이유는 더 선명해야 합니다.",
-            "risk": "정상 경로 밖의 입력과 재시도 상황을 어떻게 다루는지가 아직 보이지 않습니다.",
-            "success": "제시된 핵심 흐름을 실제 화면에서 확인할 수 있었습니다.",
-        }
+    executed_steps = sum(step.get("status") in {"success", "failed"} for step in browser_steps)
 
-    def evidence(key: str) -> str:
+    def observed_evidence(key: str) -> str:
         item = judges[key]
-        if key == "problem_wow":
-            return "첫 화면과 데모 시나리오가 같은 문제를 가리켜요."
-        if key == "completeness":
-            evidence = "; ".join(item.get("evidence", []))
-            return "흐름은 중간에 끊기지 않았고 콘솔도 조용했습니다." if "0건" in evidence else "흐름에서 몇 군데 멈췄습니다."
-        if key == "ai_implementation":
+        if key == resolve_criterion_key(PERSONAS["vc_investor"]):
+            return f"제출 시나리오 ‘{scenario}’는 확인했습니다. 문제의 차별성은 추가 비교 근거가 필요합니다."
+        if key == resolve_criterion_key(PERSONAS["staff_engineer"]):
+            if not executed_steps:
+                return "실행된 브라우저 단계가 없어 동작을 확인할 수 없습니다."
+            errors = len(browser.get("console_errors", []))
+            return f"실행 가능한 단계 {executed_steps}개 중 {successful_steps}개가 성공했고 콘솔 오류는 {errors}건 기록됐습니다."
+        if key == resolve_criterion_key(PERSONAS["open_source_maintainer"]):
             refs = item.get("references", [])
             if refs:
                 ref = refs[0]
-                return f"{ref.get('file')}의 {ref.get('line')}번째 줄에서 web_search 도구 호출이 연결된 건 확인했습니다."
-            return "설계 의도를 확인할 만한 구체적인 흔적은 찾지 못했습니다."
-        if key == "operational_quality":
-            return "실패 처리나 평가·모니터링을 실제로 보여주는 근거는 찾지 못했습니다."
+                return f"{ref.get('file', '코드')} {ref.get('line', '?')}줄의 신호를 확인했습니다. 실제 결과 연결 여부는 이 근거 범위에서만 판단합니다."
+            return "AI 기능의 실제 호출 경로를 가리키는 코드 참조가 없습니다."
+        if key == resolve_criterion_key(PERSONAS["evaluation_reviewer"]):
+            static = data.get("static_analysis", {})
+            evaluation_matches = static.get("matches", {}).get("evaluation", [])
+            if evaluation_matches:
+                return "평가 코드 신호는 확인됩니다. 골든 데이터셋·지표·결과의 연결을 추가로 확인하겠습니다."
+            if item.get("references", []):
+                if key == "operations":
+                    return "레거시 운영 신호는 있지만 골든 데이터셋과 실제 평가 결과의 근거로는 충분하지 않습니다."
+                return "운영 품질 참조는 있지만 골든 데이터셋·지표·결과의 연결을 추가로 확인해야 합니다."
+            return "골든 데이터셋과 평가 결과를 연결할 코드 참조가 없습니다."
         refs = item.get("references", [])
         authors = refs[0].get("authors", {}) if refs else {}
-        count = len(authors)
-        return f"Git 기록에서 작성자 흔적이 {count}명에게만 보였습니다."
+        return f"Git 기록에서 확인되는 작성자는 {len(authors)}명입니다. 발표 역할은 이 기록과 일치하는 범위에서만 인정하겠습니다."
 
-    def add(key: str, text: str, at: int, kind: str = "statement", side: str = "left", settle: bool = False) -> None:
-        if settle:
-            current[key] = judges[key]["score"]
-        events.append({
-            "speaker": judges[key]["persona"], "avatar": judges[key]["profile"]["avatar"], "role": judges[key]["role"],
-            "text": text, "at_seconds": at, "kind": kind, "side": side, "judge_key": key, "score_snapshot": dict(current),
-        })
-
+    persona_by_key = {resolve_criterion_key(persona): persona for persona in PERSONAS.values()}
     events = []
-    add("problem_wow", notes["problem"], 0, side="left")
-    add("completeness", f"제가 직접 눌러본 기준으로 말씀드리면, {flow_summary}. {notes['success']} {evidence('completeness')}", 2, side="right")
-    add("ai_implementation", f"여기서부터는 조금 냉정하게 볼게요. {evidence('ai_implementation')} 다만 도구를 썼다는 것과 그 도구가 이 문제에 꼭 필요했다는 건 다른 이야기입니다.", 4, side="left")
-    add("operational_quality", f"저는 정상 경로를 끝내는 것보다 실패했을 때가 더 궁금합니다. {notes['risk']} {evidence('operational_quality')}", 6, side="right")
-    add("presentation_collaboration", f"이 팀이 {scenario.split('하고')[0]}까지 어떤 이야기를 만들었는지는 전달됐습니다. 그래도 발표와 실제 협업은 구분해야겠죠. {evidence('presentation_collaboration')}", 8, side="left")
-    add("problem_wow", f"{notes['problem'].split('다만')[0].strip()} 그래서 첫 제안은 {current['problem_wow']}점 정도 드리고 싶습니다.", 10, "initial", "left")
-    add("completeness", f"{notes['success']} {successful_steps}개 단계가 정상적으로 이어졌다는 점까지 감안하면 첫 판단은 {current['completeness']}점까지 드려도 괜찮겠습니다.", 12, "initial", "right")
-    add("ai_implementation", f"저는 첫 판단을 {current['ai_implementation']}점으로 두겠습니다. {evidence('ai_implementation')} 여기까지는 인정하겠습니다. 하지만 이걸로 설계가 충분히 설명됐다고 말하기는 어렵습니다.", 14, "initial", "left")
-    add("operational_quality", f"{notes['risk']} 그래서 운영·품질은 우선 {current['operational_quality']}점으로 두겠습니다. 평가나 모니터링 근거가 없으면 더 올리기는 어렵습니다.", 16, "initial", "right")
-    add("presentation_collaboration", f"저는 우선 {current['presentation_collaboration']}점으로 두고 싶습니다. 팀의 결과물을 낮게 보려는 게 아니라, 현재 기록만으로는 협업을 확인할 수 없기 때문입니다.", 18, "initial", "left")
-    add("problem_wow", f"박세이님 말처럼 끝까지 잘 돌아간 건 분명히 플러스예요. 다만 그 사실이 문제의 절박함을 자동으로 증명하진 않으니, 저는 {judges['problem_wow']['score']}점으로 한 점 조정하겠습니다.", 20, "rebuttal", "left", True)
-    add("ai_implementation", f"그 정도면 저도 동의합니다. 도구 사용은 실제 근거가 있으니 {judges['ai_implementation']['score']}점으로 올리죠. 다만 멀티에이전트라고 부를 정도의 근거는 아닙니다.", 22, "rebuttal", "right", True)
-    add("operational_quality", f"{notes['risk']} 정상 실행만으로는 이 위험을 덮을 수 없어요. 저는 운영 점수 {judges['operational_quality']['score']}점을 유지하겠습니다.", 24, "rebuttal", "right", True)
-    events.append({"speaker": "Coordinator", "avatar": "🎬", "role": "최종 합의", "text": "좋습니다. 각자 담당 근거를 확인했고 서로의 점수 조정 제안에도 합의했습니다. 이제 추가 점수 없이 확정합니다.", "at_seconds": 26, "kind": "synthesis", "side": "center", "score_snapshot": dict(current)})
-    events.append({"speaker": "Coordinator", "avatar": "🎬", "role": "최종 확정", "text": f"패널 최종 합의: ‘{scenario}’ 데모에서 확인된 실행 강점은 인정하되, 확인하지 못한 부분은 추정으로 보상하지 않습니다. 이 점수로 고정합니다.", "at_seconds": 29, "kind": "final", "side": "center", "finalized": True, "score_snapshot": {key: judges[key]["score"] for key in keys}})
+
+    def add(key: str, text: str, at: int, kind: str = "observation", side: str = "left") -> None:
+        persona = persona_by_key[key]
+        event = {
+            "speaker": persona["display_name"],
+            "avatar": persona["dialogue_avatar"],
+            "role": persona["role"],
+            "text": text,
+            "at_seconds": at,
+            "kind": kind,
+            "side": side,
+            "criterion_key": key,
+            "persona_id": persona["id"],
+            "score_snapshot": {},
+        }
+        if kind in {"proposal", "rebuttal"}:
+            event["judge_key"] = key
+            event["score_snapshot"] = {key: current[key]}
+        events.append(event)
+
+    problem_key = resolve_criterion_key(PERSONAS["vc_investor"])
+    implementation_key = resolve_criterion_key(PERSONAS["open_source_maintainer"])
+    completeness_key = resolve_criterion_key(PERSONAS["staff_engineer"])
+    operations_key = resolve_criterion_key(PERSONAS["evaluation_reviewer"])
+    collaboration_key = resolve_criterion_key(PERSONAS["it_creator"])
+
+    add(problem_key, observed_evidence(problem_key), 0, side="left")
+    add(completeness_key, observed_evidence(completeness_key), 2, side="right")
+    add(implementation_key, observed_evidence(implementation_key), 4, side="left")
+    add(operations_key, observed_evidence(operations_key), 6, side="right")
+    add(collaboration_key, observed_evidence(collaboration_key), 8, side="left")
+    add(problem_key, f"확인한 문제와 데모 근거를 기준으로 {judges[problem_key]['score']}점을 제안합니다.", 10, "proposal", "left")
+    add(completeness_key, f"브라우저 실행 기록만 반영해 {judges[completeness_key]['score']}점을 제안합니다.", 12, "proposal", "right")
+    add(implementation_key, f"코드에서 확인되는 호출 신호만 반영해 {judges[implementation_key]['score']}점을 제안합니다.", 14, "proposal", "left")
+    add(operations_key, f"현재 런타임이 수집한 운영 근거 범위에서 {judges[operations_key]['score']}점을 제안합니다. 골든 데이터셋 평가 근거 여부는 별도로 명시합니다.", 16, "proposal", "right")
+    add(collaboration_key, f"Git 기록으로 확인되는 협업 범위에서 {judges[collaboration_key]['score']}점을 제안합니다.", 18, "proposal", "left")
+    add(problem_key, "동작 성공은 문제 해결의 근거가 될 수 있지만 차별성을 자동으로 증명하지는 않습니다. 담당 점수를 유지합니다.", 20, "rebuttal", "left")
+    add(implementation_key, "키워드 탐지는 출발점일 뿐입니다. 실제 연결이 확인되지 않은 부분은 가점하지 않고 담당 점수를 유지합니다.", 22, "rebuttal", "right")
+    add(operations_key, "정상 실행만으로 골든 데이터셋과 평가 품질이 증명되지는 않습니다. 담당 점수를 유지합니다.", 24, "rebuttal", "right")
+    events.append({
+        "speaker": COORDINATOR["display_name"],
+        "avatar": COORDINATOR["fallback_avatar"],
+        "role": COORDINATOR["role"],
+        "text": "각 담당자가 제시한 근거와 점수의 연결을 확인했습니다. 새로운 기준이나 추정은 추가하지 않습니다.",
+        "at_seconds": 26,
+        "kind": "synthesis",
+        "side": "center",
+        "score_snapshot": dict(current),
+    })
+    events.append({
+        "speaker": COORDINATOR["display_name"],
+        "avatar": COORDINATOR["fallback_avatar"],
+        "role": COORDINATOR["role"],
+        "text": "패널이 제출물에서 확인한 근거에 따라 이 점수로 확정합니다.",
+        "at_seconds": 29,
+        "kind": "final",
+        "side": "center",
+        "finalized": True,
+        "score_snapshot": {key: judges[key]["score"] for key in keys},
+    })
     return events
 
 
