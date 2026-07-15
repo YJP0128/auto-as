@@ -313,6 +313,47 @@ def run_panel(data: dict, repeats: int = 2) -> dict:
     return run_local_panel(data, repeats)
 
 
+INSUFFICIENT_EVIDENCE_MARKERS = ("근거 없음", "근거 부족", "확인 안 됨", "실행 근거 없음")
+
+
+def _draft_insufficient(item: dict) -> bool:
+    text = " ".join(str(entry) for entry in item.get("evidence", []))
+    return any(marker in text for marker in INSUFFICIENT_EVIDENCE_MARKERS)
+
+
+def first_round_assessments(data: dict) -> list[dict]:
+    """1차 채점(stage 1): 담당 2인이 각 기준을 독립 채점한 10개 초안.
+
+    task 7의 CRITERION_REVIEWERS를 소비해 기준마다 주담당·부담당 두 초안을 만든다.
+    로컬은 규칙 점수라 primary·secondary가 같은 점수를 내되 페르소나 관점에 따라
+    근거 프레이밍만 달라진다(실제 점수 발산은 OpenAI 모드). 각 페르소나는 담당한
+    2개 기준만 채점한다. 이 초안은 이후 의견 조정·코디네이터 단계가 소비한다.
+    """
+    scored = score_evidence(data)["items"]
+    drafts = []
+    for criterion, roles in CRITERION_REVIEWERS.items():
+        item = scored[criterion]
+        insufficient = _draft_insufficient(item)
+        for role in ("primary", "secondary"):
+            persona = PERSONAS[roles[role]]
+            role_label = "주담당" if role == "primary" else "부담당"
+            evidence = [str(entry) for entry in item.get("evidence", [])]
+            drafts.append({
+                "criterion": criterion,
+                "persona_id": persona["id"],
+                "persona": persona["display_name"],
+                "role": role,
+                "score": item["score"],
+                "max_score": item["max_score"],
+                "confidence": item["confidence"],
+                "evidence": evidence,
+                "references": list(item.get("references", [])),
+                "insufficient_evidence": insufficient,
+                "rationale": f"{persona['display_name']}·{role_label} 관점: " + ("; ".join(evidence) or "확인 가능한 근거가 없습니다."),
+            })
+    return drafts
+
+
 def run_local_panel(data: dict, repeats: int = 2) -> dict:
     rounds = [judge_once(data) for _ in range(max(1, repeats))]
     judges = {}
@@ -330,6 +371,7 @@ def run_local_panel(data: dict, repeats: int = 2) -> dict:
     return {
         "repeats": len(rounds),
         "judges": judges,
+        "first_round": first_round_assessments(data),
         "coordinator": dict(COORDINATOR),
         "battles": battles,
         "discussion": build_discussion(data, judges, battles),
@@ -443,6 +485,64 @@ JUDGES:
 
 COORDINATOR:
 {json.dumps(COORDINATOR, ensure_ascii=False)}
+
+EVIDENCE:
+{json.dumps(_openai_evidence(data), ensure_ascii=False)}
+
+OUTPUT_SCHEMA:
+{json.dumps(schema, ensure_ascii=False)}"""
+
+
+def build_first_round_prompt(data: dict) -> str:
+    """1차 채점(OpenAI) 프롬프트 — 담당 2인 구조로 정확히 10개 평가를 요구한다.
+
+    각 리뷰어는 자신이 배정된 단일 기준만 채점하고, 그 기준의 allowed_references만
+    인용한다. run_openai_panel(1:1)과 별개이며, task 9(의견 조정)가 이 초안을 소비한다.
+    """
+    catalog = _reference_catalog(data)
+    reviewers = []
+    for criterion, roles in CRITERION_REVIEWERS.items():
+        for role in ("primary", "secondary"):
+            context = build_persona_prompt_context(roles[role])
+            reviewers.append({
+                "persona_id": context["id"],
+                "display_name": context["display_name"],
+                "criterion": criterion,
+                "role": role,
+                "max_score": int(RUBRIC[criterion]["max_score"]),
+                "allowed_references": catalog.get(criterion, []),
+                "favored_evidence": context["favored_evidence"],
+                "critique_guidance": context["critique_guidance"],
+                "prohibited_scoring": context["prohibited_scoring"],
+            })
+    schema = {
+        "assessments": [
+            {
+                "persona_id": "the reviewer's persona id",
+                "criterion": "the reviewer's assigned criterion",
+                "role": "primary|secondary",
+                "score": "integer 0..max_score for that criterion",
+                "confidence": "high|medium|low",
+                "insufficient_evidence": "boolean",
+                "evidence": [{"claim": "short Korean claim", "reference": "one exact value from that criterion's allowed_references"}],
+                "rationale": "short Korean rationale",
+            }
+        ]
+    }
+    return f"""You are running stage 1 (independent first-round scoring) of a hackathon judging panel.
+Return valid JSON only. Produce exactly one assessment for every entry in REVIEWERS (10 total).
+
+All judges are fictional project characters. Do not imitate or mention any real person. Persona voice changes wording
+only and never changes the rubric score. Apply every rule in SCORING_INVARIANTS.
+Each reviewer scores ONLY its own assigned criterion — never another criterion. Every scored claim must cite one exact
+value from that criterion's allowed_references. If no valid reference supports a score, set insufficient_evidence=true,
+state the gap, and do not invent compensating facts. Keep each score within 0..max_score for that criterion.
+
+SCORING_INVARIANTS:
+{json.dumps(SCORING_INVARIANTS, ensure_ascii=False)}
+
+REVIEWERS:
+{json.dumps(reviewers, ensure_ascii=False)}
 
 EVIDENCE:
 {json.dumps(_openai_evidence(data), ensure_ascii=False)}

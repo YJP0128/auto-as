@@ -429,6 +429,37 @@ def test_assignment_mapping():
             raise AssertionError("invalid assignment must raise")
 
 
+def test_first_round_assessments():
+    from collections import Counter
+
+    from auto_as.panel import CRITERION_REVIEWERS, build_first_round_prompt, first_round_assessments
+
+    data = {
+        "submission": {"scenario": "x"},
+        "static_analysis": {"categories": {"tools": True}, "matches": {"tools": [{"file": "a.py", "line": "1", "text": "t"}]}},
+        "git_analysis": {"available": True, "authors": {"a": 2, "b": 2}},
+        "browser": {"available": True, "steps": [{"status": "success"}], "console_errors": []},
+    }
+    drafts = first_round_assessments(data)
+    assert len(drafts) == 10
+    assert all(count == 2 for count in Counter(d["criterion"] for d in drafts).values())
+    assert all(count == 2 for count in Counter(d["persona_id"] for d in drafts).values())
+    for draft in drafts:
+        assert CRITERION_REVIEWERS[draft["criterion"]][draft["role"]] == draft["persona_id"]
+        assert 0 <= draft["score"] <= draft["max_score"]
+        assert isinstance(draft["insufficient_evidence"], bool)
+    assert first_round_assessments(data) == drafts  # 결정론
+
+    empty = first_round_assessments({"submission": {}, "static_analysis": {"categories": {}}, "git_analysis": {}})
+    operational = [d for d in empty if d["criterion"] == "operational_quality"]
+    assert operational and all(d["insufficient_evidence"] for d in operational)
+
+    prompt = build_first_round_prompt(data)
+    assert prompt.count('"role": "primary"') == 5
+    assert prompt.count('"role": "secondary"') == 5
+    assert "ONLY its own assigned criterion" in prompt
+
+
 def test_test_file_path_is_contained():
     with tempfile.TemporaryDirectory() as directory:
         input_path = Path(directory) / "submission.json"
