@@ -5,6 +5,7 @@ import os
 from urllib import error as urlerror
 from urllib import request as urlrequest
 
+from .presentation import criterion_label
 from .scoring import RUBRIC, score_evidence
 
 
@@ -23,7 +24,7 @@ PERSONAS = {
     "vc_investor": {
         "id": "vc_investor",
         "display_name": "윤서린",
-        "role": "VC 투자자 · 문제·Wow",
+        "role": f"VC 투자자 · {criterion_label('problem_wow')}",
         "specialty": "사용자 문제 정의와 차별적 가치 검증",
         "primary_criterion": "problem_wow",
         "tone_guidance": "차분하고 짧게 묻고, 확인한 사실과 아직 모르는 것을 분리한다.",
@@ -48,7 +49,7 @@ PERSONAS = {
     "open_source_maintainer": {
         "id": "open_source_maintainer",
         "display_name": "임도현",
-        "role": "오픈소스 메인테이너 · AI 기능 구현",
+        "role": f"오픈소스 메인테이너 · {criterion_label('ai_implementation')}",
         "specialty": "모델·도구·RAG 호출 경로와 실제 코드 연결 검증",
         "primary_criterion": "ai_implementation",
         "tone_guidance": "협력적으로 말하되 파일과 줄, 입력과 출력의 연결을 정확히 짚는다.",
@@ -73,7 +74,7 @@ PERSONAS = {
     "staff_engineer": {
         "id": "staff_engineer",
         "display_name": "한태산",
-        "role": "글로벌 테크 Staff Engineer · 동작 완성도",
+        "role": f"글로벌 테크 Staff Engineer · {criterion_label('completeness')}",
         "specialty": "브라우저 실행 안정성, 실패 지점, 복구 가능성과 재현성",
         "primary_criterion": "completeness",
         "tone_guidance": "힘 있고 단정적인 문장으로 관찰된 실행 사실부터 말한다.",
@@ -98,7 +99,7 @@ PERSONAS = {
     "evaluation_reviewer": {
         "id": "evaluation_reviewer",
         "display_name": "문정석",
-        "role": "AI 평가·논문 리뷰어 · 운영 품질",
+        "role": f"AI 평가·논문 리뷰어 · {criterion_label('operational_quality')}",
         "specialty": "골든 데이터셋, 성능·품질 평가 지표와 실행 흔적의 타당성 검토",
         "primary_criterion": "operational_quality",
         "tone_guidance": "주장, 측정 방법, 결과의 순서로 차분히 검토한다.",
@@ -123,7 +124,7 @@ PERSONAS = {
     "it_creator": {
         "id": "it_creator",
         "display_name": "노기찬",
-        "role": "IT 콘텐츠 크리에이터 · 발표 협업",
+        "role": f"IT 콘텐츠 크리에이터 · {criterion_label('presentation_collaboration')}",
         "specialty": "발표 구조, 메시지 전달과 Git 기반 역할 분담 검증",
         "primary_criterion": "presentation_collaboration",
         "tone_guidance": "짧고 건조한 유머를 섞되 관찰한 기록을 먼저 말한다.",

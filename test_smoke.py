@@ -8,6 +8,7 @@ from auto_as.planner import heuristic_plan, plan_scenario
 from auto_as.scoring import RUBRIC, score_evidence
 from auto_as.report import render_report
 from auto_as.leaderboard import assign_badges, render_leaderboard
+from auto_as.presentation import criterion_display
 from auto_as.panel import (
     COORDINATOR,
     PERSONAS,
@@ -63,6 +64,12 @@ def test_score_bounds():
     result = score_evidence({"submission": {"scenario": "x"}, "static_analysis": {"categories": {}}, "git_analysis": {}})
     assert 0 <= result["total"] <= 100
     assert sum(item["max_score"] for item in result["items"].values()) == 100
+
+
+def test_downstream_rubric_display_uses_canonical_metadata():
+    assert criterion_display("ai_implementation")["label"] == "AI 기능 구현"
+    assert criterion_display("completeness")["max_score"] == 25
+    assert criterion_display("operational_quality")["badge"] == "평가 품질상"
 
 
 def test_operational_quality_tiers():
@@ -162,6 +169,7 @@ def test_panel():
     assert len(PERSONAS) == 5
     assert set(result["judges"]) == rubric_keys
     assert all(judge["persona_id"] in PERSONAS for judge in result["judges"].values())
+    assert "AI 기능 구현" in result["judges"]["ai_implementation"]["role"]
     assert all(judge["rounds"] == [judge["score"], judge["score"]] for judge in result["judges"].values())
     assert result["coordinator"]["is_scoring_persona"] is False
     assert result["discussion"][-1]["speaker"] == COORDINATOR["display_name"]
