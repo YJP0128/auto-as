@@ -404,6 +404,31 @@ def test_operational_persona_uses_only_t2_scoring_signals():
     assert "golden_dataset" in review and "eval/golden.jsonl" in review
 
 
+def test_assignment_mapping():
+    from auto_as.panel import CRITERION_REVIEWERS, PERSONAS, assignments_for, reviewers_for, validate_assignments
+
+    validate_assignments()
+    assert set(CRITERION_REVIEWERS) == set(RUBRIC)
+    assert reviewers_for("problem_wow") == {"primary": "vc_investor", "secondary": "it_creator"}
+
+    scoring = [pid for pid, persona in PERSONAS.items() if persona["is_scoring_persona"]]
+    seen = [pid for roles in CRITERION_REVIEWERS.values() for pid in roles.values()]
+    for pid in scoring:
+        assert sorted(role for _, role in assignments_for(pid)) == ["primary", "secondary"]
+        assert seen.count(pid) == 2
+
+    for bad in (
+        {**CRITERION_REVIEWERS, "problem_wow": {"primary": "vc_investor", "secondary": "vc_investor"}},
+        {**CRITERION_REVIEWERS, "problem_wow": {"primary": "vc_investor", "secondary": "panel_coordinator"}},
+    ):
+        try:
+            validate_assignments(bad)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("invalid assignment must raise")
+
+
 def test_test_file_path_is_contained():
     with tempfile.TemporaryDirectory() as directory:
         input_path = Path(directory) / "submission.json"
