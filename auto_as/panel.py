@@ -159,6 +159,62 @@ COORDINATOR = {
 }
 
 
+# ── Task 7: 2:2 담당 매핑 ──────────────────────────────────────────
+# 각 기준을 두 명(주담당 primary + 부담당 secondary)이 본다. primary는 위
+# PERSONAS의 primary_criterion과 일치하고, secondary는 전문성이 인접한 다른
+# 페르소나다. 이 매핑은 데이터 정의일 뿐이며 실제 2인 채점·토론은 이후 단계
+# (1차 채점·의견 조정)에서 소비한다. 기존 1:1 채점 흐름은 변경하지 않는다.
+CRITERION_REVIEWERS = {
+    "problem_wow": {"primary": "vc_investor", "secondary": "it_creator"},
+    "ai_implementation": {"primary": "open_source_maintainer", "secondary": "evaluation_reviewer"},
+    "completeness": {"primary": "staff_engineer", "secondary": "open_source_maintainer"},
+    "operational_quality": {"primary": "evaluation_reviewer", "secondary": "staff_engineer"},
+    "presentation_collaboration": {"primary": "it_creator", "secondary": "vc_investor"},
+}
+
+
+def validate_assignments(assignments: dict | None = None, personas: dict | None = None, rubric: dict | None = None) -> None:
+    """2:2 담당 매핑의 불변식을 검증한다. 위반 시 ValueError를 던진다."""
+    assignments = assignments if assignments is not None else CRITERION_REVIEWERS
+    personas = personas if personas is not None else PERSONAS
+    rubric = rubric if rubric is not None else RUBRIC
+
+    scoring_ids = {pid for pid, persona in personas.items() if persona.get("is_scoring_persona")}
+    if set(assignments) != set(rubric):
+        raise ValueError(f"assignments must cover exactly the rubric criteria: {sorted(rubric)}")
+
+    per_persona: dict[str, list[str]] = {pid: [] for pid in scoring_ids}
+    for criterion, roles in assignments.items():
+        if set(roles) != {"primary", "secondary"}:
+            raise ValueError(f"{criterion} must define exactly 'primary' and 'secondary'")
+        if roles["primary"] == roles["secondary"]:
+            raise ValueError(f"{criterion} primary and secondary must differ")
+        for role, pid in roles.items():
+            if pid not in scoring_ids:
+                raise ValueError(f"{criterion} {role} is not a scoring persona: {pid}")
+            per_persona[pid].append(role)
+        if personas[roles["primary"]]["primary_criterion"] != criterion:
+            raise ValueError(f"{criterion} primary {roles['primary']} does not own this criterion")
+
+    for pid, roles in per_persona.items():
+        if sorted(roles) != ["primary", "secondary"]:
+            raise ValueError(f"{pid} must be primary for one criterion and secondary for another, got {roles}")
+
+
+def reviewers_for(criterion: str) -> dict[str, str]:
+    """기준을 담당하는 주담당/부담당 페르소나 id."""
+    return dict(CRITERION_REVIEWERS[criterion])
+
+
+def assignments_for(persona_id: str) -> list[tuple[str, str]]:
+    """페르소나가 담당하는 (criterion, role) 목록 — 주담당 1 + 부담당 1."""
+    return [(criterion, role) for criterion, roles in CRITERION_REVIEWERS.items() for role, pid in roles.items() if pid == persona_id]
+
+
+# 기본 매핑은 항상 유효해야 한다 — 잘못된 편집이면 import 시점에 즉시 실패한다.
+validate_assignments()
+
+
 def resolve_criterion_key(persona: dict, rubric: dict | None = None) -> str:
     available = rubric or RUBRIC
     key = persona["primary_criterion"]
