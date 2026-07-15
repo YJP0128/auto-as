@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">가상의 AI 평가 리뷰어 문정석</title>
+  <desc id="desc">데이터 표와 평가 차트를 검토하는 독창적인 플랫 벡터 캐릭터</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7f2e35"/>
+      <stop offset="1" stop-color="#d8804d"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <rect x="52" y="62" width="181" height="146" rx="20" fill="#fff5dc"/>
+  <path d="M82 167l31-36 29 19 42-55" fill="none" stroke="#a23c45" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M81 91h118M81 112h74" stroke="#d1b28f" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="184" cy="95" r="9" fill="#d15d4c"/>
+  <path d="M119 470c11-116 62-178 137-178s126 62 137 178" fill="#fff2d3"/>
+  <path d="M166 324l90 71 90-71 27 146H139z" fill="#65313b"/>
+  <circle cx="264" cy="210" r="89" fill="#d19772"/>
+  <path d="M176 211c-5-80 34-127 96-127 57 0 92 45 83 121-30-12-58-36-77-66-28 35-62 59-102 72z" fill="#3b2a26"/>
+  <path d="M194 191c26-22 53-34 83-52" fill="none" stroke="#e6d4c1" stroke-width="9" stroke-linecap="round" opacity=".7"/>
+  <circle cx="228" cy="216" r="7" fill="#332823"/>
+  <circle cx="299" cy="216" r="7" fill="#332823"/>
+  <path d="M237 257c18 9 36 9 54 0" fill="none" stroke="#87493f" stroke-width="7" stroke-linecap="round"/>
+  <rect x="325" y="302" width="143" height="140" rx="16" fill="#fffaf0" transform="rotate(-4 325 302)"/>
+  <path d="M354 338h78M354 365h78M354 392h43" stroke="#c5a37c" stroke-width="8" stroke-linecap="round"/>
+  <path d="M412 407l15 15 29-38" fill="none" stroke="#a33b45" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
