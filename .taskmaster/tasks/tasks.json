@@ -637,7 +637,7 @@
         "dependencies": [
           "8"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -645,9 +645,10 @@
             "description": "Create typed contracts for pairing first-round reviewer drafts and recording each per-criterion reconciliation exchange.",
             "dependencies": [],
             "details": "Add models for reviewer pairs, comparison summaries, challenges, rebuttals, accepted and rejected evidence, proposed resolutions, validation flags, and the three-stage timeline payload.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit-test serialization, required fields, criterion/reviewer identity preservation, and validation of evidence-reference fields.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-07-15T07:09:22.623Z"
           },
           {
             "id": 2,
@@ -657,9 +658,10 @@
               1
             ],
             "details": "For every criterion, map its primary and secondary reviewers, compare scores and rationales, generate challenge and rebuttal entries, classify cited evidence, and produce a defensible proposed resolution. Reject or flag changes supported only by authority, persona, or bare assertion.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Use divergent-score fixtures to verify mapped pairs, evidence-linked challenges and rebuttals, rejected unsupported changes, and identical output across repeated local runs.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-07-15T07:09:22.633Z"
           },
           {
             "id": 3,
@@ -669,9 +671,10 @@
               1
             ],
             "details": "Construct prompts containing only the criterion, paired first-round drafts, allowed evidence, references, and reviewer context. Define a strict structured schema requiring comparison, challenge, rebuttal, accepted/rejected evidence, proposed resolution, and validation flags; prohibit unsupported authority-based revisions.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Validate prompt content and schema requirements with unit tests, including assertions that evidence IDs are required for conflicts and prohibited justification rules are explicit.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-07-15T07:09:22.639Z"
           },
           {
             "id": 4,
@@ -682,9 +685,10 @@
               3
             ],
             "details": "Extend the discussion orchestration to group stage-1 drafts by criterion, resolve the configured primary-secondary pair, select local or OpenAI execution, validate returned records, and expose one reconciliation thread per criterion without altering stage-1 ownership.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Integration-test five reconciliation threads from ten default first-round drafts, each containing exactly its assigned reviewer pair and a complete reconciliation record.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-07-15T07:09:22.645Z"
           },
           {
             "id": 5,
@@ -694,12 +698,14 @@
               4
             ],
             "details": "Apply persona tone guidance solely when rendering challenge and rebuttal language, while retaining evidence-based decision logic. Add a timeline model or UI-ready payload showing stage 1 independent drafts, stage 2 paired reconciliation, and stage 3 coordinator decision, including approximately 30-second sequencing metadata.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Assert persona variations do not change equivalent local resolution outcomes, verify personality-only changes are flagged, and snapshot-test the complete three-stage timeline representation.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-07-15T07:09:22.650Z"
           }
         ],
-        "owner": "P2-debate"
+        "owner": "P2-debate",
+        "updatedAt": "2026-07-15T07:09:22.650Z"
       },
       {
         "id": "10",
@@ -1253,9 +1259,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-07-15T06:38:51.324Z",
+      "lastModified": "2026-07-15T07:09:22.650Z",
       "taskCount": 16,
-      "completedCount": 8,
+      "completedCount": 9,
       "tags": [
         "master"
       ]
