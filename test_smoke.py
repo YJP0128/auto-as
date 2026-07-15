@@ -8,7 +8,8 @@ from auto_as.planner import heuristic_plan, plan_scenario
 from auto_as.scoring import RUBRIC, score_evidence
 from auto_as.report import render_report
 from auto_as.leaderboard import assign_badges, render_leaderboard
-from auto_as.panel import run_panel
+from auto_as.presentation import criterion_display
+from auto_as.panel import run_local_panel
 from auto_as.cli import main as cli_main
 
 
@@ -50,6 +51,12 @@ def test_score_bounds():
     result = score_evidence({"submission": {"scenario": "x"}, "static_analysis": {"categories": {}}, "git_analysis": {}})
     assert 0 <= result["total"] <= 100
     assert sum(item["max_score"] for item in result["items"].values()) == 100
+
+
+def test_downstream_rubric_display_uses_canonical_metadata():
+    assert criterion_display("ai_implementation")["label"] == "AI 기능 구현"
+    assert criterion_display("completeness")["max_score"] == 25
+    assert criterion_display("operational_quality")["badge"] == "평가 품질상"
 
 
 def test_operational_quality_tiers():
@@ -143,8 +150,9 @@ def test_leaderboard_review_flag():
 
 
 def test_panel():
-    result = run_panel({"submission": {"scenario": "x"}, "static_analysis": {"categories": {}}, "git_analysis": {}})
+    result = run_local_panel({"submission": {"scenario": "x"}, "static_analysis": {"categories": {}}, "git_analysis": {}})
     assert set(result["judges"]) == {"problem_wow", "ai_implementation", "completeness", "operational_quality", "presentation_collaboration"}
+    assert "AI 기능 구현" in result["judges"]["ai_implementation"]["role"]
     assert all(judge["rounds"] == [judge["score"], judge["score"]] for judge in result["judges"].values())
     assert result["discussion"][-1]["speaker"] == "Coordinator"
 

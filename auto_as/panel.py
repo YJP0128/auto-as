@@ -5,13 +5,14 @@ import os
 from urllib import error as urlerror
 from urllib import request as urlrequest
 
+from .presentation import criterion_label
 from .scoring import score_evidence
 
 
 PERSONAS = {
     "problem_wow": {
         "name": "손중권 교수", "age": 68, "job": "수학·통계 교수",
-        "role": "문제·기초 타당성", "style": "느긋한 기초주의자", "max_score": 20,
+        "role": f"문제·기초 타당성 · {criterion_label('problem_wow')}", "style": "느긋한 기초주의자", "max_score": 20,
         "personality": "자기 방식대로 수업하고 학생 앞에서 혼자 공부하는 듯 보이지만, 기초를 이해하려는 학생에게는 매우 후하다.",
         "likes": "명확한 문제 정의, 데이터의 출처와 한계, AI 결과를 직접 검증한 흔적",
         "dislikes": "방향성 없는 AI 사용, 근거 없는 수치와 그래프, 기초 개념을 유행어로 덮는 설명",
@@ -35,7 +36,7 @@ PERSONAS = {
     },
     "ai_implementation": {
         "name": "이도윤", "age": 42, "job": "시리즈B 스타트업 CTO",
-        "role": "에이전트 설계", "style": "논리적", "max_score": 20,
+        "role": f"기술 구현 검토 · {criterion_label('ai_implementation')}", "style": "논리적", "max_score": 20,
         "personality": "차분하지만 구조적 허점을 발견하면 끝까지 파고든다.",
         "likes": "목적에 맞는 최소 설계, 명확한 도구 경계, 재현 가능한 흐름",
         "dislikes": "이름만 멀티에이전트인 코드, 이유 없는 RAG, 오버엔지니어링",
@@ -59,7 +60,7 @@ PERSONAS = {
     },
     "completeness": {
         "name": "박세이", "age": 29, "job": "스타트업 SRE·QA 리드",
-        "role": "동작·완성도", "style": "사실 중심", "max_score": 25,
+        "role": f"동작·완성도 · {criterion_label('completeness')}", "style": "사실 중심", "max_score": 25,
         "personality": "작은 오류도 놓치지 않지만 매끄러운 흐름에는 솔직하게 후하다.",
         "likes": "재현 가능한 성공, 빠른 피드백, 예외 입력에도 흔들리지 않는 UI",
         "dislikes": "콘솔 오류, 비활성 버튼, 발표용으로만 준비된 해피패스",
@@ -82,7 +83,7 @@ PERSONAS = {
     },
     "operational_quality": {
         "name": "최민석", "age": 45, "job": "플랫폼 신뢰성·보안 총괄",
-        "role": "운영·품질", "style": "리스크 중심", "max_score": 15,
+        "role": f"운영·품질 · {criterion_label('operational_quality')}", "style": "리스크 중심", "max_score": 15,
         "personality": "무뚝뚝하지만 실패를 미리 막은 팀에는 가장 크게 인정한다.",
         "likes": "가드레일, 장애 시나리오, 관측 가능한 실패, 실제 평가 코드",
         "dislikes": "운영 준비 없이 성공 화면만 보여주는 데모, 근거 없는 안전 주장",
@@ -105,7 +106,7 @@ PERSONAS = {
     },
     "presentation_collaboration": {
         "name": "한다은", "age": 33, "job": "해커톤 팀 커뮤니케이션 코치",
-        "role": "발표·협업", "style": "관찰 중심", "max_score": 20,
+        "role": f"발표·협업 · {criterion_label('presentation_collaboration')}", "style": "관찰 중심", "max_score": 20,
         "personality": "따뜻하지만 기록과 말이 어긋나는 순간은 정확히 짚는다.",
         "likes": "고른 커밋 기여, 역할과 결과의 일치, 팀의 일관된 이야기",
         "dislikes": "한 사람에게 몰린 작업, 발표에서만 나뉜 역할, 빈약한 협업 흔적",
