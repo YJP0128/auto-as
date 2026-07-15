@@ -143,12 +143,16 @@ def collect_evidence(submission: dict, artifact_dir: Path | None = None) -> dict
         for key, judge in evidence["panel"].get("judges", {}).items():
             if key in evidence["score"]["items"]:
                 evidence["score"]["items"][key]["confidence"] = judge["confidence"]
-        if evidence["panel"].get("provider") == "openai":
-            for key, judge in evidence["panel"].get("judges", {}).items():
+        final_decisions = evidence["panel"].get("final_decisions", [])
+        if final_decisions:
+            for decision in final_decisions:
+                key = decision["criterion"]
                 if key in evidence["score"]["items"]:
-                    evidence["score"]["items"][key]["score"] = judge["score"]
+                    evidence["score"]["items"][key]["score"] = decision["final_score"]
+                    evidence["score"]["items"][key]["evidence"] = [decision["reason"]]
+                    evidence["score"]["items"][key]["references"] = decision["references"]
             evidence["score"]["total"] = sum(item["score"] for item in evidence["score"]["items"].values())
-            evidence["score"]["mode"] = "openai"
+            evidence["score"]["mode"] = evidence["panel"].get("provider", "local_provisional")
         return evidence
 
 

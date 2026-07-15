@@ -392,12 +392,107 @@ def reconcile_criteria(data: dict) -> list[dict]:
             "challenge": challenge,
             "rebuttal": rebuttal,
             "accepted_evidence": list(primary["evidence"]),
+            "accepted_references": list(primary["references"]),
             "rejected_evidence": [],
             "proposed_score": primary["score"],
             "proposed_confidence": primary["confidence"],
             "unresolved": not agree,
         })
     return records
+
+
+def _reference_value(reference: dict) -> str:
+    if reference.get("type") == "ai_reference":
+        return str(reference.get("value", ""))
+    if reference.get("type") == "code":
+        return f"static_analysis.matches.{reference.get('category', '')}[{reference.get('line', '')}]"
+    if reference.get("type") == "browser":
+        return f"browser.steps[{reference.get('step', '')}]"
+    if reference.get("type") == "scenario":
+        return "submission.scenario"
+    if reference.get("type") == "git":
+        return "git_analysis.authors"
+    return str(reference.get("value", ""))
+
+
+def _decision_references(drafts: list[dict], reconciliation: dict) -> list[dict]:
+    references = []
+    seen = set()
+    for draft in drafts:
+        for reference in draft.get("references", []):
+            value = _reference_value(reference)
+            if value and value not in seen:
+                seen.add(value)
+                references.append(reference)
+    for reference in reconciliation.get("accepted_references", []):
+        value = _reference_value(reference)
+        if value and value not in seen:
+            seen.add(value)
+            references.append(reference)
+    return references[:10]
+
+
+def _decision_record(criterion: str, drafts: list[dict], reconciliation: dict, score: int, reason: str, sufficient: bool, adjustment: str) -> dict:
+    references = _decision_references(drafts, reconciliation)
+    trace = [f"draft:{criterion}:primary", f"draft:{criterion}:secondary", f"reconciliation:{criterion}"]
+    return {
+        "criterion": criterion,
+        "final_score": max(0, min(int(RUBRIC[criterion]["max_score"]), int(score))),
+        "max_score": int(RUBRIC[criterion]["max_score"]),
+        "reason": reason,
+        "evidence_ids": sorted({_reference_value(reference) for reference in references if _reference_value(reference)}),
+        "references": references,
+        "decision_trace": trace,
+        "evidence_sufficient": bool(sufficient),
+        "adjustment": {"status": adjustment, "supported_by": trace[2:] if adjustment == "supported" else []},
+    }
+
+
+def validate_coordinator_decisions(decisions: list[dict], drafts: list[dict] | None = None, reconciliations: list[dict] | None = None) -> list[dict]:
+    if not isinstance(decisions, list) or len(decisions) != len(RUBRIC):
+        raise ValueError("coordinator must return exactly one decision per criterion")
+    by_criterion = {decision.get("criterion"): decision for decision in decisions}
+    if set(by_criterion) != set(RUBRIC):
+        raise ValueError("coordinator decisions must cover every rubric criterion once")
+    draft_map = {}
+    for draft in drafts or []:
+        draft_map.setdefault(draft["criterion"], []).append(draft)
+    for criterion, decision in by_criterion.items():
+        maximum = int(RUBRIC[criterion]["max_score"])
+        if not isinstance(decision.get("final_score"), int) or not 0 <= decision["final_score"] <= maximum:
+            raise ValueError(f"invalid final score for {criterion}")
+        if not str(decision.get("reason", "")).strip() or not decision.get("decision_trace"):
+            raise ValueError(f"incomplete coordinator trace for {criterion}")
+        if not decision.get("references") and decision.get("evidence_sufficient", True):
+            raise ValueError(f"missing coordinator references for {criterion}")
+        if drafts and not set(decision["decision_trace"]).issuperset({f"draft:{criterion}:primary", f"draft:{criterion}:secondary"}):
+            raise ValueError(f"untraceable coordinator decision for {criterion}")
+        positions = {draft["score"] for draft in draft_map.get(criterion, [])}
+        if positions and decision["final_score"] not in positions and decision.get("adjustment", {}).get("status") != "supported":
+            raise ValueError(f"unsupported coordinator adjustment for {criterion}")
+    return [by_criterion[criterion] for criterion in RUBRIC]
+
+
+def finalize_criteria(data: dict, drafts: list[dict] | None = None, reconciliations: list[dict] | None = None) -> list[dict]:
+    drafts = drafts if drafts is not None else first_round_assessments(data)
+    reconciliations = reconciliations if reconciliations is not None else reconcile_criteria(data)
+    grouped = {criterion: [draft for draft in drafts if draft["criterion"] == criterion] for criterion in RUBRIC}
+    records = []
+    for reconciliation in reconciliations:
+        criterion = reconciliation["criterion"]
+        criterion_drafts = grouped[criterion]
+        positions = [draft["score"] for draft in criterion_drafts]
+        insufficient = all(draft["insufficient_evidence"] or not draft["references"] for draft in criterion_drafts)
+        proposed = int(reconciliation["proposed_score"])
+        supported = proposed in positions or insufficient
+        if insufficient:
+            score, reason, status = 0, "확인 가능한 근거가 부족해 점수를 확정하지 않습니다.", "insufficient"
+        elif supported:
+            score, reason, status = proposed, "두 담당 심사자의 초안과 조정 기록에서 확인된 점수입니다.", "supported"
+        else:
+            score, reason, status = min(positions), "조정 점수가 두 초안에서 지지되지 않아 확인된 위치를 유지합니다.", "unsupported_rejected"
+        records.append(_decision_record(criterion, criterion_drafts, reconciliation, score, reason, not insufficient, status))
+    return validate_coordinator_decisions(records, drafts, reconciliations)
 
 
 def run_local_panel(data: dict, repeats: int = 2) -> dict:
@@ -413,12 +508,16 @@ def run_local_panel(data: dict, repeats: int = 2) -> dict:
             result["confidence"] = "low"
         judges[rubric_key] = result
 
+    first_round = first_round_assessments(data)
+    reconciliation = reconcile_criteria(data)
+    final_decisions = finalize_criteria(data, first_round, reconciliation)
     battles = build_battles(judges)
     return {
         "repeats": len(rounds),
         "judges": judges,
-        "first_round": first_round_assessments(data),
-        "reconciliation": reconcile_criteria(data),
+        "first_round": first_round,
+        "reconciliation": reconciliation,
+        "final_decisions": final_decisions,
         "coordinator": dict(COORDINATOR),
         "battles": battles,
         "discussion": build_discussion(data, judges, battles),
@@ -650,6 +749,74 @@ OUTPUT_SCHEMA:
 {json.dumps(schema, ensure_ascii=False)}"""
 
 
+def build_coordinator_prompt(data: dict, drafts: list[dict] | None = None, reconciliations: list[dict] | None = None) -> str:
+    drafts = drafts if drafts is not None else first_round_assessments(data)
+    reconciliations = reconciliations if reconciliations is not None else reconcile_criteria(data)
+    schema = {
+        "decisions": [{
+            "criterion": "one rubric criterion",
+            "final_score": "integer 0..max_score",
+            "reason": "short Korean evidence-backed reason",
+            "evidence_ids": ["exact reference catalog values"],
+            "references": ["exact reference catalog values"],
+            "decision_trace": ["draft:criterion:primary", "draft:criterion:secondary", "reconciliation:criterion"],
+            "evidence_sufficient": "boolean",
+            "adjustment": {"status": "supported|unsupported_rejected|insufficient", "supported_by": ["trace id"]},
+        }]
+    }
+    return f"""You are the non-scoring coordinator finalizing a hackathon panel.
+Return valid JSON only, with exactly one decision for each of the five criteria.
+Inspect only the assigned evidence, the two first-round positions, and the reconciliation record below.
+Never add facts, score from personality, or impersonate a scoring judge. A changed score is valid only when it is
+one of the supported reviewer positions or cites accepted/reweighted evidence from the allowed reference catalog.
+If evidence is insufficient, set final_score to 0, evidence_sufficient to false, and adjustment.status to insufficient.
+Every sufficient decision must include at least one exact evidence reference and all decisions must include the three
+decision_trace IDs. Keep scores within their rubric maxima.
+
+COORDINATOR:
+{json.dumps(COORDINATOR, ensure_ascii=False)}
+
+EVIDENCE:
+{json.dumps(_openai_evidence(data), ensure_ascii=False)}
+
+FIRST_ROUND_DRAFTS:
+{json.dumps(drafts, ensure_ascii=False)}
+
+RECONCILIATIONS:
+{json.dumps(reconciliations, ensure_ascii=False)}
+
+OUTPUT_SCHEMA:
+{json.dumps(schema, ensure_ascii=False)}"""
+
+
+def parse_coordinator_decisions(payload: dict, data: dict, drafts: list[dict] | None = None, reconciliations: list[dict] | None = None) -> list[dict]:
+    decisions = payload.get("decisions")
+    if not isinstance(decisions, list):
+        raise ValueError("coordinator response is missing decisions")
+    allowed = {reference for values in _reference_catalog(data).values() for reference in values}
+    normalized = []
+    for decision in decisions:
+        criterion = decision.get("criterion")
+        if criterion not in RUBRIC:
+            raise ValueError(f"unknown coordinator criterion: {criterion}")
+        references = [str(reference).strip() for reference in decision.get("references", []) if str(reference).strip()]
+        if any(reference not in allowed for reference in references):
+            raise ValueError(f"coordinator returned an unsupported reference for {criterion}")
+        trace = [str(value) for value in decision.get("decision_trace", [])]
+        normalized.append({
+            "criterion": criterion,
+            "final_score": int(decision.get("final_score", -1)),
+            "max_score": int(RUBRIC[criterion]["max_score"]),
+            "reason": str(decision.get("reason", "")).strip(),
+            "evidence_ids": references,
+            "references": [{"type": "ai_reference", "value": reference} for reference in references],
+            "decision_trace": trace,
+            "evidence_sufficient": bool(decision.get("evidence_sufficient", False)),
+            "adjustment": decision.get("adjustment", {}),
+        })
+    return validate_coordinator_decisions(normalized, drafts, reconciliations)
+
+
 def _normalize_ai_evidence(item: dict, allowed_references: set[str]) -> tuple[list[str], list[dict], bool]:
     evidence = []
     references = []
@@ -733,9 +900,7 @@ def _parse_openai_discussion_event(event: dict, reference_catalog: dict[str, lis
     }
 
 
-def run_openai_panel(data: dict) -> dict:
-    prompt = build_openai_panel_prompt(data)
-    reference_catalog = _reference_catalog(data)
+def _openai_json(prompt: str) -> dict:
     body = json.dumps({
         "model": os.getenv("OPENAI_MODEL", "gpt-5.6-luna"),
         "reasoning_effort": os.getenv("OPENAI_REASONING_EFFORT", "medium"),
@@ -755,8 +920,12 @@ def run_openai_panel(data: dict) -> dict:
         detail = exc.read().decode("utf-8", errors="replace")[:500]
         raise ValueError(f"OpenAI API {exc.code}: {detail}") from exc
 
-    content = payload["choices"][0]["message"]["content"]
-    result = json.loads(content)
+    return json.loads(payload["choices"][0]["message"]["content"])
+
+
+def run_openai_panel(data: dict) -> dict:
+    reference_catalog = _reference_catalog(data)
+    result = _openai_json(build_openai_panel_prompt(data))
     judges = {}
     for persona_id in PERSONAS:
         criterion = PERSONAS[persona_id]["primary_criterion"]
@@ -771,6 +940,12 @@ def run_openai_panel(data: dict) -> dict:
             discussion.append(parsed)
     if len(discussion) < 5:
         raise ValueError("OpenAI response contained too few discussion events")
+    drafts = first_round_assessments(data)
+    reconciliations = reconcile_criteria(data)
+    final_decisions = parse_coordinator_decisions(
+        _openai_json(build_coordinator_prompt(data, drafts, reconciliations)), data, drafts, reconciliations
+    )
+    final_scores = {decision["criterion"]: decision["final_score"] for decision in final_decisions}
     discussion.sort(key=lambda event: event["at_seconds"])
     discussion.append({
         "speaker": COORDINATOR["display_name"],
@@ -781,7 +956,7 @@ def run_openai_panel(data: dict) -> dict:
         "kind": "final",
         "side": "center",
         "finalized": True,
-        "score_snapshot": {key: judge["score"] for key, judge in judges.items()},
+        "score_snapshot": final_scores,
     })
     return {
         "repeats": 1,
@@ -790,6 +965,9 @@ def run_openai_panel(data: dict) -> dict:
         "reasoning_effort": os.getenv("OPENAI_REASONING_EFFORT", "medium"),
         "judges": judges,
         "coordinator": dict(COORDINATOR),
+        "first_round": drafts,
+        "reconciliation": reconciliations,
+        "final_decisions": final_decisions,
         "battles": build_battles(judges),
         "discussion": discussion,
     }
