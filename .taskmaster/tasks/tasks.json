@@ -1014,7 +1014,7 @@
           "5",
           "6"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1022,7 +1022,7 @@
             "description": "Identify leaderboard.py, its templates, and existing score/badge rendering paths, then define a single data-driven view model for personas and rubric metadata.",
             "dependencies": [],
             "details": "Trace how PERSONAS, profile assets, rubric definitions, scores, and status labels reach the leaderboard template. Define template-ready fields without duplicating persona or criterion text in HTML.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Review rendered fixture inputs and verify the proposed view model can supply all card and badge fields.",
             "parentId": "undefined"
           },
@@ -1034,7 +1034,7 @@
               1
             ],
             "details": "For each configured persona, expose display name, fictional role, specialty, concise responsibility, profile image URL, descriptive alt text, and fallback metadata. Preserve configuration order and avoid hard-coded persona prose.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit test that the generated card collection contains exactly five unique configured personas with required non-empty display fields.",
             "parentId": "undefined"
           },
@@ -1046,7 +1046,7 @@
               2
             ],
             "details": "Render card image, alt attribute, persona name, fictional role, specialty, and responsibility. Use semantic structure and CSS classes consistent with existing leaderboard styles; do not embed duplicated persona descriptions in the template.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Render an HTML fixture and assert five unique cards, required role and specialty text, image elements, and non-empty alt attributes.",
             "parentId": "undefined"
           },
@@ -1059,7 +1059,7 @@
               3
             ],
             "details": "Use the stable profile asset paths supplied by the persona asset configuration. Add an image error handler, fallback source or placeholder state, and accessible fallback labeling without depending on remote image URLs.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Render or browser-test a deliberately missing asset and verify fallback image or placeholder styling activates while card text and accessibility attributes remain available.",
             "parentId": "undefined"
           },
@@ -1073,7 +1073,7 @@
               4
             ],
             "details": "Build badge and score-copy fields from rubric configuration, including current criterion display labels and maximum weights. Remove obsolete terminology, especially former criterion labels, and add rendering tests for cards, badges, and fallback behavior.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Assert rendered leaderboard badges match all official criterion names and weights, stale labels are absent, five cards are present, and missing-image fallback behavior is covered.",
             "parentId": "undefined"
           }
