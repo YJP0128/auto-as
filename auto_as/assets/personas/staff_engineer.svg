@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">가상의 Staff Engineer 한태산</title>
+  <desc id="desc">브라우저 창과 체크리스트를 든 독창적인 플랫 벡터 캐릭터</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#174b96"/>
+      <stop offset="1" stop-color="#2aa4d6"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <rect x="55" y="65" width="174" height="128" rx="18" fill="#eaf8ff" opacity=".95"/>
+  <path d="M55 99h174" stroke="#8ccbe6" stroke-width="9"/>
+  <circle cx="78" cy="82" r="7" fill="#ef6b6b"/>
+  <circle cx="99" cy="82" r="7" fill="#f3bd4d"/>
+  <circle cx="120" cy="82" r="7" fill="#51be82"/>
+  <path d="M87 130l16 16 31-34M87 169l16 16 31-34M153 142h47M153 181h47" fill="none" stroke="#2872a2" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M108 470c13-117 70-180 148-180s135 63 148 180" fill="#f2f7fb"/>
+  <path d="M171 317l85 66 85-66 39 153H132z" fill="#e36f36"/>
+  <circle cx="263" cy="207" r="91" fill="#b97654"/>
+  <path d="M172 205c-2-80 37-127 98-127 63 0 99 50 83 135-21-42-50-64-88-67-36 24-67 38-93 59z" fill="#251d22"/>
+  <rect x="197" y="199" width="52" height="39" rx="14" fill="none" stroke="#243544" stroke-width="9"/>
+  <rect x="278" y="199" width="52" height="39" rx="14" fill="none" stroke="#243544" stroke-width="9"/>
+  <path d="M249 215h29" stroke="#243544" stroke-width="9"/>
+  <circle cx="224" cy="217" r="5" fill="#20252c"/>
+  <circle cx="303" cy="217" r="5" fill="#20252c"/>
+  <path d="M235 260c20 10 40 10 58 0" fill="none" stroke="#7b3f3b" stroke-width="7" stroke-linecap="round"/>
+  <rect x="339" y="282" width="119" height="154" rx="18" fill="#fff1c7" transform="rotate(6 339 282)"/>
+  <path d="M368 329l13 13 24-29M365 374l13 13 24-29M414 328h20M411 373h20" fill="none" stroke="#2c6995" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

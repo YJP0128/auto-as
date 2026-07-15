@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">가상의 VC 투자자 윤서린</title>
+  <desc id="desc">보라색 피치 카드를 든 독창적인 플랫 벡터 캐릭터</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5b3cc4"/>
+      <stop offset="1" stop-color="#d85c9b"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <circle cx="92" cy="92" r="28" fill="#ffe579" opacity=".9"/>
+  <path d="M92 42v20M92 122v20M42 92h20M122 92h20M57 57l14 14M113 113l14 14M127 57l-14 14M71 113l-14 14" stroke="#ffe579" stroke-width="10" stroke-linecap="round"/>
+  <path d="M123 470c12-116 63-178 133-178s121 62 133 178" fill="#f7f1ff"/>
+  <path d="M182 309l74 88 74-88 37 161H145z" fill="#3c285f"/>
+  <circle cx="256" cy="212" r="91" fill="#f4b48e"/>
+  <path d="M167 221c-10-86 30-137 98-137 59 0 103 42 95 135-20-54-56-75-108-75-38 0-67 27-85 77z" fill="#2a183d"/>
+  <path d="M180 207c-7-53 1-90 22-113-49 20-64 68-35 132zM329 118c25 28 29 68 15 117 38-30 32-87-15-117z" fill="#2a183d"/>
+  <circle cx="221" cy="217" r="7" fill="#30263a"/>
+  <circle cx="291" cy="217" r="7" fill="#30263a"/>
+  <path d="M230 257c18 13 36 13 53 0" fill="none" stroke="#a55262" stroke-width="7" stroke-linecap="round"/>
+  <rect x="292" y="310" width="142" height="102" rx="15" fill="#fff6cf" transform="rotate(-7 292 310)"/>
+  <path d="M335 349l18-18 18 18 30-32" fill="none" stroke="#6e4bc7" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="315" cy="390" r="20" fill="#f4b48e"/>
+</svg>
