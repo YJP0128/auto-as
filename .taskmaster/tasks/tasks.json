@@ -244,7 +244,7 @@
         "dependencies": [
           "1"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -252,7 +252,7 @@
             "description": "Review the official criterion definitions and current documentation structure before drafting personas.",
             "dependencies": [],
             "details": "Read scoring.py and existing docs to capture exact criterion names, evidence guidance, terminology, and Markdown conventions for the new document.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Confirm all five canonical rubric criteria and their evidence constraints are recorded for use in the persona specifications.",
             "parentId": "undefined"
           },
@@ -264,7 +264,7 @@
               1
             ],
             "details": "Create an opening policy that names all personas as fictional parody-inspired motifs only, disclaims reproduction of real speech or personality, and requires every score decision to cite applicable rubric evidence.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Review the policy text for an explicit parody disclaimer, prohibition on real-person imitation, and requirement that scores remain evidence-grounded.",
             "parentId": "undefined"
           },
@@ -277,7 +277,7 @@
               2
             ],
             "details": "Add IU-inspired fictional VC investor coverage for Problem & Wow and Park Myung-soo-inspired fictional IT creator coverage for Presentation & Collaboration, including role, expertise, favored evidence, critique tendencies, permitted style, prohibited scoring behavior, and synthetic utterances.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Check both profiles contain every required section, assign the intended primary criterion, and use only synthetic, non-imitative utterances tied to rubric evidence.",
             "parentId": "undefined"
           },
@@ -290,7 +290,7 @@
               2
             ],
             "details": "Add Son Heung-min-inspired fictional open-source developer for AI Implementation, Kang Ho-dong-inspired fictional FAANG staff engineer for Completeness, and Baek Jong-won-inspired fictional paper reviewer for Operational Quality, with all required profile fields and evidence limits.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify all three profiles include complete required sections, correct primary criterion ownership, and no unsupported claims, bias, or evidence-free score changes.",
             "parentId": "undefined"
           },
@@ -303,7 +303,7 @@
               4
             ],
             "details": "Update docs/judge-personas.md with exactly five default personas, clear criterion assignments, consistent headings, evidence-bound scoring rules, and representative synthetic utterances; remove conflicting or obsolete persona content.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Perform a documentation validation that asserts exactly five personas, all five primary criteria are covered once, each profile has required sections, the disclaimer exists, and example utterances do not authorize unsupported scoring.",
             "parentId": "undefined"
           }
