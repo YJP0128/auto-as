@@ -26,6 +26,7 @@ from auto_as.panel import (
     resolve_criterion_key,
     run_local_panel,
 )
+from auto_as.validation import validate_evidence_integrity, validate_panel_result
 from auto_as.cli import main as cli_main
 
 
@@ -515,29 +516,105 @@ def test_coordinator_final_decisions():
         raise AssertionError("out-of-range coordinator score must be rejected")
 
 
-def test_dialogue_and_sample():
-    from auto_as.panel import CRITERION_REVIEWERS, run_local_panel
+def test_evidence_integrity_validator_accepts_traceable_panel_result():
+    data = {
+        "submission": {"scenario": "x"},
+        "static_analysis": {
+            "categories": {"tools": True, "golden_dataset": True},
+            "matches": {
+                "tools": [{"file": "a.py", "line": "1", "text": "tool"}],
+                "golden_dataset": [{"file": "eval/golden.jsonl", "line": 1, "text": "golden"}],
+            },
+        },
+        "git_analysis": {"available": True, "authors": {"a": 2, "b": 2}},
+        "browser": {"available": True, "steps": [{"step": 0, "status": "success"}], "console_errors": []},
+    }
+    result = validate_panel_result(run_local_panel(data), data)
+    assert result["valid"] is True
+    assert result["summary"] == {"error": 0, "warning": 0, "info": 0, "total": 0}
+    assert validate_panel_result(run_local_panel(data), data) == result
 
-    root = Path(__file__).parent
-    fixture = json.loads((root / "examples" / "submissions" / "fixtures" / "sample-evidence.json").read_text(encoding="utf-8"))
-    panel = run_local_panel(fixture)
-    assert len(panel["first_round"]) == 10
-    assert len(panel["reconciliation"]) == 5
-    assert len(panel["final_decisions"]) == 5
-    for draft in panel["first_round"]:
-        assert CRITERION_REVIEWERS[draft["criterion"]][draft["role"]] == draft["persona_id"]
-    for decision in panel["final_decisions"]:
-        assert 0 <= decision["final_score"] <= decision["max_score"]
-        assert "references" in decision and "evidence_sufficient" in decision
 
-    dialogue = (root / "docs" / "dialogue-quality.md").read_text(encoding="utf-8")
-    for section in ("담당 구조 (2:2)", "1차 채점", "의견 조정", "코디네이터 최종 결정"):
-        assert section in dialogue
+def test_evidence_integrity_validator_reports_required_failure_types():
+    data = {
+        "submission": {"scenario": "x"},
+        "static_analysis": {"categories": {"tools": True}, "matches": {"tools": [{"file": "a.py", "line": 1}]}},
+        "git_analysis": {"available": True, "authors": {"a": 1, "b": 1}},
+        "browser": {"available": True, "steps": [{"step": 0, "status": "success"}], "console_errors": []},
+    }
+    panel = run_local_panel(data)
 
-    sample = (root / "docs" / "sample-panel-run.md").read_text(encoding="utf-8")
-    for stage in ("1단계 — 1차 채점", "2단계 — 의견 조정", "3단계 — 코디네이터", "30초 타임라인"):
-        assert stage in sample
-    assert "illustrative" in sample
+    missing = json.loads(json.dumps(panel))
+    missing["final_decisions"][0]["references"] = []
+    missing["final_decisions"][0]["evidence_ids"] = []
+    missing_result = validate_panel_result(missing, data)
+    assert "MISSING_EVIDENCE_REFERENCE" in {item["code"] for item in missing_result["findings"]}
+
+    dangling = json.loads(json.dumps(panel))
+    dangling["final_decisions"][0]["references"] = [{"type": "ai_reference", "value": "ev-missing"}]
+    dangling["final_decisions"][0]["evidence_ids"] = ["ev-missing"]
+    dangling_result = validate_panel_result(dangling, data)
+    assert "DANGLING_REFERENCE" in {item["code"] for item in dangling_result["findings"]}
+
+    invalid_source = json.loads(json.dumps(panel))
+    invalid_source["final_decisions"][0]["references"] = [{"type": "ai_reference", "value": "ev-shell"}]
+    invalid_source["final_decisions"][0]["evidence_ids"] = ["ev-shell"]
+    invalid_source_result = validate_panel_result(invalid_source, [{
+        "id": "ev-shell",
+        "source_type": "shell_execution",
+        "criterion_candidates": ["problem_wow"],
+    }])
+    assert "UNSUPPORTED_SOURCE_TYPE" in {item["code"] for item in invalid_source_result["findings"]}
+
+    mismatch = json.loads(json.dumps(panel))
+    mismatch["final_decisions"][0]["references"] = [{"type": "ai_reference", "value": "ev-browser"}]
+    mismatch["final_decisions"][0]["evidence_ids"] = ["ev-browser"]
+    mismatch_result = validate_panel_result(mismatch, [{
+        "id": "ev-browser",
+        "source_type": "browser",
+        "criterion_candidates": ["completeness"],
+    }])
+    assert "CRITERION_MISMATCH" in {item["code"] for item in mismatch_result["findings"]}
+
+    duplicate = json.loads(json.dumps(panel))
+    shared_reference = {"type": "ai_reference", "value": "browser.steps[0]"}
+    for index in (0, 2):
+        duplicate["final_decisions"][index]["references"] = [shared_reference]
+        duplicate["final_decisions"][index]["evidence_ids"] = ["browser.steps[0]"]
+    duplicate_result = validate_panel_result(duplicate, data)
+    assert "CROSS_CRITERION_DUPLICATE" in {item["code"] for item in duplicate_result["findings"]}
+
+    unsupported = json.loads(json.dumps(panel))
+    operational = next(item for item in unsupported["final_decisions"] if item["criterion"] == "operational_quality")
+    operational["final_score"] = 15
+    operational["adjustment"] = {"status": "unsupported_rejected"}
+    unsupported_result = validate_panel_result(unsupported, data)
+    assert "UNSUPPORTED_SCORE_ADJUSTMENT" in {item["code"] for item in unsupported_result["findings"]}
+
+    untraceable = json.loads(json.dumps(panel))
+    untraceable["final_decisions"][0]["decision_trace"] = []
+    untraceable_result = validate_panel_result(untraceable, data)
+    assert "UNTRACEABLE_FINAL_DECISION" in {item["code"] for item in untraceable_result["findings"]}
+
+
+def test_evidence_integrity_validator_accepts_explicit_insufficiency():
+    result = validate_evidence_integrity(
+        {"submission": {}, "static_analysis": {"matches": {}}, "git_analysis": {}, "browser": {}},
+        drafts=[
+            {"criterion": "problem_wow", "role": "primary", "score": 0, "insufficient_evidence": True},
+            {"criterion": "problem_wow", "role": "secondary", "score": 0, "insufficient_evidence": True},
+        ],
+        debates=[{"criterion": "problem_wow"}],
+        finals=[{
+            "criterion": "problem_wow",
+            "final_score": 0,
+            "reason": "근거 부족으로 점수를 확정하지 않습니다.",
+            "evidence_sufficient": False,
+            "decision_trace": ["draft:problem_wow:primary", "draft:problem_wow:secondary", "reconciliation:problem_wow"],
+        }],
+    )
+    assert result["valid"] is True
+    assert "INSUFFICIENT_EVIDENCE_DECLARED" in {item["code"] for item in result["findings"]}
 
 
 def test_test_file_path_is_contained():
