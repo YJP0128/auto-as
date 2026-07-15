@@ -79,9 +79,15 @@ def score_evidence(data: dict) -> dict:
     completeness_score, completeness_evidence, completeness_refs = _browser_score(data)
     completeness = _item("completeness", completeness_score, completeness_evidence, "medium" if browser.get("available") else "low", completeness_refs)
 
-    operations_flags = [key for key in ("evaluation", "monitoring", "guardrails") if categories.get(key)]
-    operations_refs = [{"type": "code", **match} for flag in operations_flags for match in static.get("matches", {}).get(flag, [])[:5]]
-    operations = _item("operational_quality", round(RUBRIC["operational_quality"]["max_score"] * len(operations_flags) / 3), [f"탐지된 운영 품질 신호: {', '.join(operations_flags) or '없음'}"], references=operations_refs)
+    # 운영품질: 골든셋(강 8) → 평가지표(중 5) → 평가흔적(약 2) 가중 합. 없으면 근거 없음을 명시.
+    op_tiers = (("golden_dataset", 8), ("eval_metric", 5), ("eval_signal", 2))
+    op_detected = [(cat, weight) for cat, weight in op_tiers if categories.get(cat)]
+    op_refs = [{"type": "code", **match} for cat, _ in op_detected for match in static.get("matches", {}).get(cat, [])[:5]]
+    op_score = min(RUBRIC["operational_quality"]["max_score"], sum(weight for _, weight in op_detected))
+    if op_detected:
+        operations = _item("operational_quality", op_score, [f"탐지된 평가 신호: {', '.join(cat for cat, _ in op_detected)}"], "medium", op_refs)
+    else:
+        operations = _item("operational_quality", 0, ["골든셋·성능평가 근거 확인 안 됨"], "low", op_refs)
 
     authors = git.get("authors", {}) if git.get("available") else {}
     counts = list(authors.values())

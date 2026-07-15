@@ -52,6 +52,20 @@ def test_score_bounds():
     assert sum(item["max_score"] for item in result["items"].values()) == 100
 
 
+def test_operational_quality_tiers():
+    def op(categories):
+        return score_evidence({"submission": {}, "static_analysis": {"categories": categories}, "git_analysis": {}})["items"]["operational_quality"]
+
+    assert op({"golden_dataset": True})["score"] == 8
+    assert op({"eval_metric": True})["score"] == 5
+    assert op({"eval_signal": True})["score"] == 2
+    assert op({"golden_dataset": True, "eval_metric": True, "eval_signal": True})["score"] == 15
+    empty = op({})
+    assert empty["score"] == 0
+    assert "근거 확인 안 됨" in empty["evidence"][0]
+    assert op({"monitoring": True, "guardrails": True})["score"] == 0
+
+
 def test_report_rendering():
     with tempfile.TemporaryDirectory() as directory:
         output = Path(directory) / "report.html"
