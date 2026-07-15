@@ -6,6 +6,7 @@ from urllib import error as urlerror
 from urllib import request as urlrequest
 
 from .scoring import RUBRIC, score_evidence
+from .presentation import criterion_label
 
 
 SCORING_INVARIANTS = (
@@ -209,6 +210,7 @@ def build_persona_prompt_context(persona_id: str) -> dict:
         "specialty": persona["specialty"],
         "primary_criterion": persona["primary_criterion"],
         "runtime_criterion": runtime_key,
+        "criterion_label": criterion_label(runtime_key),
         "max_score": criterion_max_score(persona),
         "tone_guidance": persona["tone_guidance"],
         "preferences": persona["preferences"],

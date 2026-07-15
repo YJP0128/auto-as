@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 
+from .presentation import criterion_display
 
 def _e(value: object) -> str:
     return html.escape(str(value))
@@ -32,9 +33,9 @@ def render_report(data: dict, output: Path) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
 
     rows = "".join(
-        f"<tr class='score-row'><th>{_e(item['name'])}</th><td>{item['score']} / {item['max_score']}<div class='bar'><i style='--score:{item['score'] / item['max_score'] * 100:.1f}%'></i></div></td>"
+        f"<tr class='score-row'><th>{_e(criterion_display(key, item)['label'])}</th><td>{item['score']} / {criterion_display(key, item)['max_score']}<div class='bar'><i style='--score:{item['score'] / item['max_score'] * 100:.1f}%'></i></div></td>"
         f"<td>{_e(item['confidence'])}</td><td>{'<br>'.join(_e(x) for x in item['evidence'])}{_references(item, output)}</td></tr>"
-        for item in items.values()
+        for key, item in items.items()
     )
     steps = "".join(
         f"<li class='step-item'><b>{_e(step.get('status'))}</b> {_e(step.get('text', ''))}"

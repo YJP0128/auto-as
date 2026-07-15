@@ -5,14 +5,9 @@ import json
 import shutil
 from pathlib import Path
 
+from .presentation import badge_definitions, criterion_display
 
-BADGES = {
-    "problem_wow": "가장 대담한 도전상",
-    "agent_design": "설계 장인상",
-    "completeness": "제로 버그상",
-    "operations": "안전제일상",
-    "collaboration": "원팀상",
-}
+BADGES = badge_definitions()
 
 
 def load_results(output_dir: Path) -> list[dict]:
@@ -27,7 +22,10 @@ def load_results(output_dir: Path) -> list[dict]:
 def assign_badges(results: list[dict]) -> dict[str, list[str]]:
     badges: dict[str, list[str]] = {result["team"]: [] for result in results}
     for key, badge in BADGES.items():
-        values = [result.get("score", {}).get("items", {}).get(key, {}).get("score", 0) for result in results]
+        values = [
+            result.get("score", {}).get("items", {}).get(criterion_display(key)["runtime_key"], {}).get("score", 0)
+            for result in results
+        ]
         if not values:
             continue
         candidates = []
@@ -37,9 +35,9 @@ def assign_badges(results: list[dict]) -> dict[str, list[str]]:
                 continue
             if key == "completeness":
                 browser = result.get("browser") or {}
-                if value != 20 or browser.get("console_errors"):
+                if value != criterion_display(key)["max_score"] or browser.get("console_errors"):
                     continue
-            if key == "operations" and value != 20:
+            if key == "operational_quality" and value != criterion_display(key)["max_score"]:
                 continue
             candidates.append(result)
         if candidates:
@@ -562,7 +560,7 @@ def render_leaderboard(results: list[dict], output: Path) -> None:
         items = score.get("items", {})
         low_confidence = any(item.get("confidence") == "low" for item in items.values())
         bars = "".join(
-            f"<div class='metric' style='grid-template-columns:minmax(0,1fr) auto;grid-template-areas:\"label score\" \"bar bar\"' data-key='{html.escape(key)}' data-final='{item['score']}' data-max='{item['max_score']}'><span style='grid-area:label'>{html.escape(item['name'])}</span><b style='grid-area:score'>—</b>"
+            f"<div class='metric' style='grid-template-columns:minmax(0,1fr) auto;grid-template-areas:\"label score\" \"bar bar\"' data-key='{html.escape(key)}' data-final='{item['score']}' data-max='{item['max_score']}'><span style='grid-area:label'>{html.escape(criterion_display(key, item)['label'])}</span><b style='grid-area:score'>—</b>"
             f"<i style='grid-area:bar'></i></div>"
             for key, item in items.items()
         )

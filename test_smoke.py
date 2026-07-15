@@ -8,6 +8,7 @@ from auto_as.planner import heuristic_plan, plan_scenario
 from auto_as.scoring import score_evidence
 from auto_as.report import render_report
 from auto_as.leaderboard import _persona_image_html, assign_badges, render_leaderboard
+from auto_as.presentation import criterion_display
 from auto_as.panel import (
     COORDINATOR,
     PERSONAS,
@@ -61,6 +62,17 @@ def test_score_bounds():
     result = score_evidence({"submission": {"scenario": "x"}, "static_analysis": {"categories": {}}, "git_analysis": {}})
     assert 0 <= result["total"] <= 100
     assert sum(item["max_score"] for item in result["items"].values()) == 100
+
+
+def test_shared_rubric_display_metadata_supports_legacy_keys():
+    assert criterion_display("agent_design")["key"] == "ai_implementation"
+    assert criterion_display("agent_design")["label"] == "AI 기능 구현"
+    assert criterion_display("operations")["label"] == "운영 품질"
+    assert criterion_display("collaboration")["max_score"] == 15
+    assert criterion_display(
+        "collaboration",
+        rubric={"presentation_collaboration": {"label": "발표·협업", "max_score": 20}},
+    )["max_score"] == 20
 
 
 def test_report_rendering():
