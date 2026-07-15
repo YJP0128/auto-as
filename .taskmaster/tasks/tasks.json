@@ -170,7 +170,7 @@
         "dependencies": [
           "1"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -178,7 +178,7 @@
             "description": "Identify the canonical rubric structure introduced by the scoring foundation and map every panel, report, and leaderboard location that currently embeds criterion labels or score maxima.",
             "dependencies": [],
             "details": "Review scoring configuration plus panel.py, report.py, leaderboard.py, templates, and related tests. Catalog stale literals such as Agent Design and prior max-score wording, then define the configuration fields each renderer needs.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Add or update a focused inventory test or assertions that identify all rendered rubric criteria through the canonical configuration.",
             "parentId": "undefined"
           },
@@ -190,7 +190,7 @@
               1
             ],
             "details": "Use the canonical RUBRIC definitions rather than duplicate constants. Preserve official criterion ordering and support approved localized labels where the configuration provides them. Ensure helpers derive the total dynamically from configured maxima.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit test the helper with the default 20/20/25/15/20 rubric and a modified configuration, asserting labels, maxima, order, and total update automatically.",
             "parentId": "undefined"
           },
@@ -202,7 +202,7 @@
               2
             ],
             "details": "Replace all legacy criterion labels, Agent Design references, and old denominator values in panel views. Render Problem & Wow, AI Implementation, Completeness, Operational Quality, and Presentation & Collaboration with their configured maxima.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Render representative panel fixtures and assert every official label and configured maximum appears, while Agent Design and obsolete denominator text do not appear.",
             "parentId": "undefined"
           },
@@ -214,7 +214,7 @@
               2
             ],
             "details": "Pass ordered rubric presentation data into report rendering and bind headings, per-criterion denominators, and aggregate total to it. Remove duplicated report-specific labels and ensure missing or adjusted criterion data has a safe display path.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Render report fixtures for default and overridden rubric values; assert all headings, 20/20/25/15/20 defaults, and computed total are correct with no stale labels.",
             "parentId": "undefined"
           },
@@ -227,7 +227,7 @@
               4
             ],
             "details": "Update leaderboard.py/templates to consume shared display metadata for badges and score-related messages. Add cross-renderer regression tests covering panel, report, and leaderboard, including changed configuration propagation and absence of legacy wording.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Render panel, report, and leaderboard fixtures and assert official labels, maxima, totals, and rubric-aware badge copy. Assert old Agent Design labels and previous score-max wording are absent across all output.",
             "parentId": "undefined"
           }
