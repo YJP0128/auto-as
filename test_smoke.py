@@ -16,10 +16,13 @@ from auto_as.panel import (
     _parse_openai_discussion_event,
     _reference_catalog,
     build_openai_panel_prompt,
+    build_coordinator_prompt,
     build_persona_prompt_context,
     criterion_max_score,
     judge_once,
     parse_openai_judge,
+    finalize_criteria,
+    validate_coordinator_decisions,
     resolve_criterion_key,
     run_local_panel,
 )
@@ -488,6 +491,28 @@ def test_reconciliation():
     assert all(criterion in prompt for criterion in RUBRIC)
     assert '"unresolved"' in prompt
     assert "reconciliation" in prompt.lower()
+
+
+def test_coordinator_final_decisions():
+    from copy import deepcopy
+
+    data = {"submission": {"scenario": "x"}, "static_analysis": {"categories": {}, "matches": {}}, "git_analysis": {}, "browser": {}}
+    decisions = finalize_criteria(data)
+    assert len(decisions) == 5
+    assert [decision["criterion"] for decision in decisions] == list(RUBRIC)
+    assert all(0 <= decision["final_score"] <= decision["max_score"] for decision in decisions)
+    assert all(decision["decision_trace"] for decision in decisions)
+    assert any(not decision["evidence_sufficient"] for decision in decisions)
+    assert "non-scoring coordinator" in build_coordinator_prompt(data)
+
+    invalid = deepcopy(decisions)
+    invalid[0]["final_score"] = invalid[0]["max_score"] + 1
+    try:
+        validate_coordinator_decisions(invalid)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("out-of-range coordinator score must be rejected")
 
 
 def test_test_file_path_is_contained():
