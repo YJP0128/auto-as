@@ -2,10 +2,10 @@ import json
 import tempfile
 from pathlib import Path
 
-from auto_as.pipeline import SubmissionError, load_submission, validate_submission
+from auto_as.pipeline import SubmissionError, load_submission, normalize_artifacts, route_artifacts, static_analysis, validate_submission
 from auto_as.browser import is_destructive, split_scenario
 from auto_as.planner import heuristic_plan, plan_scenario
-from auto_as.scoring import score_evidence
+from auto_as.scoring import RUBRIC, score_evidence
 from auto_as.report import render_report
 from auto_as.leaderboard import assign_badges, render_leaderboard
 from auto_as.panel import run_panel
@@ -50,6 +50,75 @@ def test_score_bounds():
     result = score_evidence({"submission": {"scenario": "x"}, "static_analysis": {"categories": {}}, "git_analysis": {}})
     assert 0 <= result["total"] <= 100
     assert sum(item["max_score"] for item in result["items"].values()) == 100
+
+
+def test_static_evidence_schema_and_stable_ids():
+    with tempfile.TemporaryDirectory() as directory:
+        repo = Path(directory)
+        (repo / "app.py").write_text("from langgraph import StateGraph\n", encoding="utf-8")
+        first = static_analysis(repo)
+        second = static_analysis(repo)
+
+    assert first["evidence"] == second["evidence"]
+    assert len(first["evidence"]) == 1
+    evidence = first["evidence"][0]
+    assert evidence["id"].startswith("static_analysis:signal:")
+    assert evidence["source"] == "static_analysis"
+    assert evidence["kind"] == "signal"
+    assert evidence["category"] == "agent_orchestration"
+    assert evidence["reference"] == {"category": "agent_orchestration", "file": "app.py", "line": 1}
+
+
+def test_artifact_normalization():
+    artifacts = normalize_artifacts(
+        {"evidence": []},
+        {"steps": [{"step": 1, "text": "click start", "status": "success", "screenshot": "step-1.png"}], "console_errors": ["boom"]},
+        {"commits": [{"id": "abc", "author": "A <a@example.com>", "timestamp": "2026-01-01T00:00:00Z"}]},
+    )
+    assert [artifact["source"] for artifact in artifacts] == ["browser", "browser", "git_analysis"]
+    assert {artifact["kind"] for artifact in artifacts} == {"step", "console_error", "commit"}
+    assert len({artifact["id"] for artifact in artifacts}) == 3
+
+
+def test_criteria_artifact_routing():
+    rubric = {
+        "ai_implementation": {"evidence_sources": ("static_analysis",)},
+        "operational_quality": {"evidence_sources": ("static_analysis",)},
+        "completeness": {"evidence_sources": ("browser",)},
+    }
+    artifacts = [
+        {"id": "a", "source": "static_analysis", "category": "tools"},
+        {"id": "b", "source": "static_analysis", "category": "monitoring"},
+        {"id": "c", "source": "static_analysis", "category": "golden_dataset"},
+        {"id": "d", "source": "browser", "category": "step"},
+    ]
+    routed = route_artifacts(artifacts, rubric)
+    assert [item["id"] for item in routed["ai_implementation"]] == ["a"]
+    assert [item["id"] for item in routed["operational_quality"]] == ["c"]
+    assert [item["id"] for item in routed["completeness"]] == ["d"]
+
+
+def test_routing_gap_contracts():
+    routed = route_artifacts([], RUBRIC)
+    assert set(routed) == set(RUBRIC)
+    assert all(items == [] for items in routed.values())
+
+    artifacts = [
+        {"id": "browser", "source": "browser", "kind": "step"},
+        {"id": "monitor", "source": "static_analysis", "category": "monitoring"},
+        {"id": "eval", "source": "static_analysis", "category": "eval_metric"},
+    ]
+    routed = route_artifacts(artifacts, RUBRIC)
+    assert all(item["source"] == "browser" for item in routed["completeness"])
+    assert [item["id"] for item in routed["operational_quality"]] == ["eval"]
+
+
+def test_missing_operational_evidence_is_insufficient():
+    result = score_evidence({"submission": {}, "static_analysis": {"categories": {}}, "git_analysis": {}})
+    operational = result["items"]["operational_quality"]
+    assert operational["score"] == 0
+    assert operational["confidence"] == "low"
+    assert operational["references"] == []
 
 
 def test_operational_quality_tiers():

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import re
 import shutil
 import subprocess
@@ -88,15 +89,57 @@ def static_analysis(repo: Path) -> dict:
                 if any(re.search(rf"(?<![a-z0-9_]){re.escape(keyword)}(?![a-z0-9_])", lowered) for keyword in keywords):
                     matches[category].append({"file": str(path.relative_to(repo)), "line": str(line_number), "text": line[:300]})
 
+    evidence = [
+        _artifact("static_analysis", "signal", match["text"], {"category": category, "file": match["file"], "line": int(match["line"])}, category)
+        for category, category_matches in matches.items()
+        for match in category_matches[:20]
+    ]
     return {
         "categories": {key: bool(value) for key, value in matches.items()},
         "matches": {key: value[:20] for key, value in matches.items()},
+        "evidence": evidence,
     }
+
+
+def _artifact(source: str, kind: str, detail: str, reference: dict, category: str | None = None) -> dict:
+    payload = json.dumps({"source": source, "kind": kind, "detail": detail, "reference": reference}, ensure_ascii=False, sort_keys=True)
+    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+    result = {"id": f"{source}:{kind}:{digest}", "source": source, "kind": kind, "detail": detail, "reference": reference}
+    if category:
+        result["category"] = category
+    return result
+
+
+def normalize_artifacts(static: dict, browser: dict | None, git: dict) -> list[dict]:
+    artifacts = list(static.get("evidence", []))
+    for step in (browser or {}).get("steps", []):
+        reference = {key: step[key] for key in ("step", "screenshot", "error") if key in step}
+        artifacts.append(_artifact("browser", "step", step.get("text", ""), {**reference, "status": step.get("status")}))
+    for index, error in enumerate((browser or {}).get("console_errors", [])):
+        artifacts.append(_artifact("browser", "console_error", error, {"index": index}))
+    for commit in git.get("commits", []):
+        artifacts.append(_artifact("git_analysis", "commit", commit.get("author", ""), commit))
+    return artifacts
+
+
+def route_artifacts(artifacts: list[dict], rubric: dict) -> dict[str, list[dict]]:
+    implementation_categories = {"agent_orchestration", "tools", "rag", "multi_agent"}
+    quality_categories = {"golden_dataset", "eval_metric", "eval_signal"}
+    routed = {}
+    for criterion, spec in rubric.items():
+        allowed = set(spec.get("evidence_sources", ()))
+        selected = [artifact for artifact in artifacts if artifact["source"] in allowed]
+        if criterion == "ai_implementation":
+            selected = [artifact for artifact in selected if artifact.get("category") in implementation_categories]
+        elif criterion == "operational_quality":
+            selected = [artifact for artifact in selected if artifact.get("category") in quality_categories]
+        routed[criterion] = selected
+    return routed
 
 
 def git_analysis(repo: Path) -> dict:
     result = subprocess.run(
-        ["git", "-C", str(repo), "log", "--format=%aN%x09%aE%x09%aI"],
+        ["git", "-C", str(repo), "log", "--format=%H%x09%aN%x09%aE%x09%aI"],
         capture_output=True,
         text=True,
         timeout=30,
@@ -106,14 +149,16 @@ def git_analysis(repo: Path) -> dict:
 
     authors: dict[str, int] = {}
     timestamps: list[str] = []
+    commits: list[dict[str, str]] = []
     for line in result.stdout.splitlines():
-        parts = line.split("\t", 2)
-        if len(parts) != 3:
+        parts = line.split("\t", 3)
+        if len(parts) != 4:
             continue
-        name, email, timestamp = parts
+        commit_id, name, email, timestamp = parts
         authors[f"{name} <{email}>"] = authors.get(f"{name} <{email}>", 0) + 1
         timestamps.append(timestamp)
-    return {"available": True, "commit_count": len(timestamps), "authors": authors, "timestamps": timestamps}
+        commits.append({"id": commit_id, "author": f"{name} <{email}>", "timestamp": timestamp})
+    return {"available": True, "commit_count": len(timestamps), "authors": authors, "timestamps": timestamps, "commits": commits}
 
 
 def collect_evidence(submission: dict, artifact_dir: Path | None = None) -> dict:
@@ -128,13 +173,19 @@ def collect_evidence(submission: dict, artifact_dir: Path | None = None) -> dict
             from .browser import run_demo_sync
 
             browser_result = run_demo_sync(submission["demo_url"], submission["scenario"], artifact_dir, submission.get("test_files", []))
+        static_result = static_analysis(repo)
+        git_result = git_analysis(repo)
         evidence = {
             "submission": submission,
             "repository": {"status": "available", "url": submission["repo_url"]},
-            "static_analysis": static_analysis(repo),
-            "git_analysis": git_analysis(repo),
+            "static_analysis": static_result,
+            "git_analysis": git_result,
             "browser": browser_result,
         }
+        evidence["artifacts"] = normalize_artifacts(static_result, browser_result, git_result)
+        from .scoring import RUBRIC
+
+        evidence["criteria_artifacts"] = route_artifacts(evidence["artifacts"], RUBRIC)
         from .scoring import score_evidence
         from .panel import run_panel
 
