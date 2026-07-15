@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html
 import json
+import shutil
 from pathlib import Path
 
 from .presentation import badge_definitions, criterion_display
@@ -154,7 +155,10 @@ h1{margin:0;font-size:clamp(30px,5vw,52px);letter-spacing:-.06em}
 .section-heading span{color:#aeb9d5;font-size:13px}
 .panel-roster{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
 .persona-card{min-width:0;padding:14px;border:1px solid #ffffff20;border-radius:15px;background:#ffffff0d}
-.persona-avatar{display:block;margin-bottom:8px;font-size:30px}
+.persona-avatar{display:grid;place-items:center;width:84px;height:84px;margin:0 auto 10px;overflow:hidden;border-radius:24px;background:#ffffff12;filter:drop-shadow(0 7px 5px #0005)}
+.persona-avatar img{display:block;width:100%;height:100%;object-fit:cover}
+.persona-avatar img[hidden],.persona-avatar .persona-fallback[hidden]{display:none}
+.persona-card .persona-fallback{display:grid;place-items:center;width:100%;height:100%;margin:0;color:#d8def0;font-size:38px}
 .persona-card strong,.persona-card span,.persona-card p,.persona-card small{display:block}
 .persona-card strong{font-size:14px}
 .persona-card span{margin-top:2px;color:#aeb9d5;font-size:11px}
@@ -494,14 +498,58 @@ _SCRIPT_TEMPLATE = """
 """
 
 
+def _persona_image_html(profile: dict, output: Path) -> str:
+    image_path = str(profile.get("image_path", ""))
+    image_alt = str(profile.get("image_alt", "가상의 AI 심사위원 프로필 이미지"))
+    fallback = str(profile.get("avatar", "👤"))
+    package_dir = Path(__file__).parent.resolve()
+    source = (package_dir / image_path).resolve() if image_path else None
+    available = False
+    if source is not None:
+        try:
+            source.relative_to(package_dir)
+            available = source.is_file()
+        except ValueError:
+            available = False
+
+    if available and source is not None:
+        asset_dir = output.parent / "assets" / "personas"
+        asset_dir.mkdir(parents=True, exist_ok=True)
+        target = asset_dir / source.name
+        if source != target.resolve():
+            shutil.copyfile(source, target)
+        rendered_path = f"assets/personas/{source.name}"
+    else:
+        rendered_path = "data:,"
+
+    state = "ready" if available else "missing"
+    image_hidden = "" if available else " hidden"
+    fallback_hidden = " hidden" if available else ""
+    onerror = "this.hidden=true;this.nextElementSibling.hidden=false;this.parentElement.dataset.imageState='error'"
+    return (
+        f"<span class='persona-avatar' data-image-state='{state}'>"
+        f"<img src='{html.escape(rendered_path)}' alt='{html.escape(image_alt)}'{image_hidden} onerror=\"{onerror}\">"
+        f"<span class='persona-fallback' aria-hidden='true'{fallback_hidden}>{html.escape(fallback)}</span></span>"
+    )
+
+
+def _persona_card_html(judge: dict, output: Path) -> str:
+    profile = judge.get("profile", {})
+    return (
+        f"<article class='persona-card'>{_persona_image_html(profile, output)}<div>"
+        f"<strong>{html.escape(judge['persona'])}</strong>"
+        f"<span>{html.escape(judge['role'])} · {html.escape(judge.get('style', ''))}</span>"
+        f"<p>{html.escape(profile.get('personality', ''))}</p>"
+        f"<small>“{html.escape(profile.get('catchphrase', '근거를 보여주세요.'))}”</small>"
+        f"<em>{html.escape(profile.get('tagline', ''))}</em></div></article>"
+    )
+
+
 def render_leaderboard(results: list[dict], output: Path) -> None:
     badges = assign_badges(results)
     ranks = _rank_by_team(results)
     panel_judges = next((result.get("panel", {}).get("judges", {}) for result in results if result.get("panel", {}).get("judges")), {})
-    panel_roster = "".join(
-        f"<article class='persona-card'><span class='persona-avatar' style='display:grid;place-items:center;width:72px;height:72px;margin:0 auto 10px;border-radius:50%;background:#ffffff12;font-size:52px;line-height:1;filter:drop-shadow(0 7px 5px #0005)'>{html.escape(judge.get('profile', {}).get('avatar', '👤'))}</span><div><strong>{html.escape(judge['persona'])}</strong><span>{html.escape(judge['role'])} · {html.escape(judge.get('style', ''))}</span><p>{html.escape(judge.get('profile', {}).get('personality', ''))}</p><small>“{html.escape(judge.get('profile', {}).get('catchphrase', '근거를 보여주세요.'))}”</small><em>{html.escape(judge.get('profile', {}).get('tagline', ''))}</em></div></article>"
-        for judge in panel_judges.values()
-    )
+    panel_roster = "".join(_persona_card_html(judge, output) for judge in panel_judges.values())
     badge_order_json = json.dumps(list(BADGES.keys()), ensure_ascii=False)
     script = _SCRIPT_TEMPLATE.replace("__BADGE_ORDER__", badge_order_json)
 

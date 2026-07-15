@@ -7,7 +7,7 @@ from auto_as.browser import is_destructive, split_scenario
 from auto_as.planner import heuristic_plan, plan_scenario
 from auto_as.scoring import RUBRIC, score_evidence
 from auto_as.report import render_report
-from auto_as.leaderboard import assign_badges, render_leaderboard
+from auto_as.leaderboard import _persona_image_html, assign_badges, render_leaderboard
 from auto_as.presentation import criterion_display
 from auto_as.panel import (
     COORDINATOR,
@@ -160,6 +160,53 @@ def test_leaderboard_review_flag():
         output = Path(directory) / "leaderboard.html"
         render_leaderboard([low_confidence], output)
         assert "검토 필요" in output.read_text(encoding="utf-8")
+
+
+def test_persona_assets_and_leaderboard_fallback():
+    root = Path(__file__).parent
+    package = root / "auto_as"
+    paths = [package / persona["profile_image_path"] for persona in PERSONAS.values()]
+    assert len(paths) == len(set(paths)) == 5
+    assert set((package / "assets" / "personas").glob("*.svg")) == set(paths)
+    real_person_names = ("아이유", "손흥민", "강호동", "백종원", "박명수")
+    document = (root / "docs" / "judge-personas.md").read_text(encoding="utf-8")
+    for persona, path in zip(PERSONAS.values(), paths):
+        svg = path.read_text(encoding="utf-8")
+        assert "<svg" in svg and 'width="512"' in svg and 'height="512"' in svg
+        assert persona["profile_image_alt"]
+        assert f"`auto_as/{persona['profile_image_path']}`" in document
+        assert persona["profile_image_alt"] in document
+        assert not any(name in svg for name in real_person_names)
+
+    data = {"submission": {"scenario": "x"}, "static_analysis": {"categories": {}}, "git_analysis": {}, "browser": {}}
+    data["score"] = score_evidence(data)
+    data["panel"] = run_local_panel(data)
+    with tempfile.TemporaryDirectory() as directory:
+        output = Path(directory) / "leaderboard.html"
+        render_leaderboard([{**data, "team": "alpha"}], output)
+        rendered = output.read_text(encoding="utf-8")
+        assert rendered.count("class='persona-card'") == 5
+        assert rendered.count("data-image-state='ready'") == 5
+        assert "class='persona-fallback'" in rendered and "onerror=" in rendered
+        for persona in PERSONAS.values():
+            assert persona["profile_image_alt"] in rendered
+            assert (output.parent / "assets" / "personas" / Path(persona["profile_image_path"]).name).is_file()
+
+        first_judge = next(iter(data["panel"]["judges"].values()))
+        original = first_judge["profile"]["image_path"]
+        try:
+            first_judge["profile"]["image_path"] = "assets/personas/missing.svg"
+            render_leaderboard([{**data, "team": "alpha"}], output)
+            missing_rendered = output.read_text(encoding="utf-8")
+            assert "data-image-state='missing'" in missing_rendered
+            assert "class='persona-fallback' aria-hidden='true'>👤</span>" in missing_rendered
+        finally:
+            first_judge["profile"]["image_path"] = original
+
+    same_directory = _persona_image_html(first_judge["profile"], package / "leaderboard.html")
+    assert "data-image-state='ready'" in same_directory
+    escaped = _persona_image_html({"image_path": "../README.md", "image_alt": "unsafe", "avatar": "👤"}, package / "leaderboard.html")
+    assert "data-image-state='missing'" in escaped
 
 
 def test_panel():
